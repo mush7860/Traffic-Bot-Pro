@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Traffic Bot Pro - Worldwide Traffic Exchange</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial;background:#f1f5f9;color:#172033}
+header{background:#172554;color:white;text-align:center;padding:25px 12px}
+header h1{margin:0;font-size:27px}
+header p{margin:9px 0 0}
+nav{background:#1e40af;padding:12px;text-align:center}
+nav button{background:transparent;color:white;border:0;padding:9px;cursor:pointer}
+.container{max-width:900px;margin:20px auto;padding:12px}
+.card{background:white;padding:20px;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px #0001}
+h2{color:#1e40af;margin-top:0}
+input{width:100%;padding:12px;margin:7px 0;border:1px solid #cbd5e1;border-radius:7px}
+button.primary{background:#2563eb;color:white;border:0;padding:12px 18px;border-radius:7px;cursor:pointer;margin:5px}
+button.secondary{background:#475569;color:white;border:0;padding:12px 18px;border-radius:7px;cursor:pointer}
+.website{padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}
+.website a{color:#2563eb}
+.hidden{display:none}
+#message{padding:12px;margin:10px 0;border-radius:7px;background:#dbeafe}
+footer{text-align:center;padding:25px;color:#64748b}
+</style>
+</head>
+<body>
+
+<header>
+<h1>TRAFFIC BOT PRO</h1>
+<p>Worldwide Traffic Exchange Platform</p>
+</header>
+
+<nav>
+<button onclick="showSection('home')">Home</button>
+<button onclick="showSection('account')">Account</button>
+<button onclick="showSection('dashboard')">Dashboard</button>
+</nav>
+
+<div class="container">
+
+<div id="message" class="hidden"></div>
+
+<section id="home" class="card">
+<h2>Welcome to Traffic Bot Pro</h2>
+<p>Discover and share websites with genuine visitors.</p>
+<p>Submit your website for admin approval and explore approved websites.</p>
+<button class="primary" onclick="showSection('account')">Get Started</button>
+</section>
+
+<section id="account" class="card">
+<h2>Register Account</h2>
+<input id="name" placeholder="Full Name">
+<input id="email" type="email" placeholder="Email Address">
+<input id="password" type="password" placeholder="Password">
+<button class="primary" onclick="register()">Register</button>
+
+<hr>
+
+<h2>Login</h2>
+<input id="loginEmail" type="email" placeholder="Email Address">
+<input id="loginPassword" type="password" placeholder="Password">
+<button class="primary" onclick="login()">Login</button>
+</section>
+
+<section id="dashboard" class="hidden">
+<div class="card">
+<h2>My Dashboard</h2>
+<p id="userInfo">Please login first.</p>
+<button class="secondary" onclick="logout()">Logout</button>
+</div>
+
+<div class="card">
+<h2>Submit Your Website</h2>
+<input id="siteName" placeholder="Website Name">
+<input id="siteUrl" type="url" placeholder="https://example.com">
+<button class="primary" onclick="submitWebsite()">Submit Website</button>
+<p>Submitted websites require admin approval.</p>
+</div>
+
+<div class="card">
+<h2>My Submitted Websites</h2>
+<div id="myWebsites">Login to see your websites.</div>
+</div>
+
+<div class="card">
+<h2>Approved Websites</h2>
+<div id="approvedWebsites">Loading websites...</div>
+</div>
+
+<div class="card">
+<h2>Membership Plans</h2>
+<p>Free Membership: ₹0</p>
+<p>7 Days Premium: ₹99</p>
+<p>30 Days Premium: ₹299</p>
+<p>90 Days Premium: ₹999</p>
+<p>Premium payments are not active yet.</p>
+</div>
+
+<div class="card">
+<h2>Advertisement Space</h2>
+<p>Banner and video advertisements will appear here when configured.</p>
+</div>
+</section>
+
+</div>
+
+<footer>
+Traffic Bot Pro © 2026
+</footer>
+
+<script>
+const SUPABASE_URL = "https://tbqwecxhfsuzyqnewrns.supabase.co";
+const SUPABASE_KEY = "sb_publishable_IEj9oHtQYJMkdf8QBerxZQ_MU_6OVUn";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+let currentUser = null;
+
+function message(text){
+ const box=document.getElementById("message");
+ box.textContent=text;
+ box.classList.remove("hidden");
+}
+
+function showSection(id){
+ ["home","account","dashboard"].forEach(x=>{
+  document.getElementById(x).classList.add("hidden");
+ });
+ document.getElementById(id).classList.remove("hidden");
+}
+
+async function register(){
+ const name=document.getElementById("name").value.trim();
+ const email=document.getElementById("email").value.trim();
+ const password=document.getElementById("password").value;
+
+ if(!name || !email || password.length<6){
+  message("Enter your name, email and password (minimum 6 characters).");
+  return;
+ }
+
+ const {data,error}=await db.auth.signUp({
+  email,
+  password,
+  options:{data:{full_name:name}}
+ });
+
+ if(error){message(error.message);return;}
+
+ message("Registration submitted. Check your email if confirmation is required.");
+}
+
+async function login(){
+ const email=document.getElementById("loginEmail").value.trim();
+ const password=document.getElementById("loginPassword").value;
+
+ const {data,error}=await db.auth.signInWithPassword({email,password});
+
+ if(error){message(error.message);return;}
+
+ currentUser=data.user;
+ await loadDashboard();
+ showSection("dashboard");
+ message("Login successful!");
+}
+
+async function logout(){
+ await db.auth.signOut();
+ currentUser=null;
+ document.getElementById("userInfo").textContent="Please login first.";
+ showSection("home");
+ message("You have logged out.");
+}
+
+async function submitWebsite(){
+ if(!currentUser){message("Please login first.");return;}
+
+ const name=document.getElementById("siteName").value.trim();
+ const url=document.getElementById("siteUrl").value.trim();
+
+ try{
+  const parsed=new URL(url);
+  if(!["http:","https:"].includes(parsed.protocol)) throw new Error();
+ }catch(e){
+  message("Enter a valid website URL starting with https://");
+  return;
+ }
+
+ if(!name){message("Enter website name.");return;}
+
+ const {error}=await db.from("websites").insert({
+  user_id:currentUser.id,
+  name:name,
+  url:url,
+  status:"pending"
+ });
+
+ if(error){message(error.message);return;}
+
+ document.getElementById("siteName").value="";
+ document.getElementById("siteUrl").value="";
+ message("Website submitted successfully. Waiting for admin approval.");
+ await loadDashboard();
+}
+
+async function loadDashboard(){
+ if(!currentUser)return;
+
+ document.getElementById("userInfo").textContent=
+ "Welcome, "+(currentUser.user_metadata.full_name || currentUser.email);
+
+ const {data:mine,error:mineError}=await db.from("websites")
+ .select("*")
+ .eq("user_id",currentUser.id)
+ .order("created_at",{ascending:false});
+
+ if(mineError){
+  document.getElementById("myWebsites").textContent=mineError.message;
+ }else{
+  document.getElementById("myWebsites").innerHTML=
+   mine.length?mine.map(w=>`
+    <div class="website">
+    <b>${escapeHTML(w.name)}</b><br>
+    ${escapeHTML(w.url)}<br>
+    Status: ${escapeHTML(w.status)}
+    </div>`).join(""):"No websites submitted yet.";
+ }
+
+ await loadApproved();
+}
+
+async function loadApproved(){
+ const box=document.getElementById("approvedWebsites");
+ const {data,error}=await db.from("websites")
+ .select("id,name,url,visits")
+ .eq("status","approved")
+ .order("created_at",{ascending:false});
+
+ if(error){box.textContent=error.message;return;}
+
+ box.innerHTML=data.length?data.map(w=>`
+  <div class="website">
+   <b>${escapeHTML(w.name)}</b><br>
+   <a href="${escapeHTML(w.url)}" target="_blank" rel="noopener noreferrer">
+   Visit Website
+   </a>
+   <br>Recorded visits: ${Number(w.visits)||0}
+  </div>`).join(""):"No approved websites yet.";
+}
+
+function escapeHTML(value){
+ return String(value).replace(/[&<>"']/g,c=>({
+  "&":"&amp;","<":"&lt;",">":"&gt;",
+  '"':"&quot;","'":"&#39;"
+ }[c]));
+}
+
+db.auth.onAuthStateChange((event,session)=>{
+ if(session){
+  currentUser=session.user;
+ }
+});
+
+async function checkSession(){
+ const {data}=await db.auth.getSession();
+ if(data.session){
+  currentUser=data.session.user;
+  await loadDashboard();
+ }
+}
+
+checkSession();
+</script>
+
+</body>
+</html>
