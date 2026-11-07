@@ -4,28 +4,125 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Traffic Bot Pro - Worldwide Traffic Exchange</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;font-family:Arial;background:#f1f5f9;color:#172033}
-header{background:#172554;color:white;text-align:center;padding:25px 12px}
+
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#f1f5f9;
+ color:#172033;
+}
+
+header{
+ background:#172554;
+ color:white;
+ text-align:center;
+ padding:25px 12px;
+}
+
 header h1{margin:0;font-size:27px}
 header p{margin:9px 0 0}
-nav{background:#1e40af;padding:12px;text-align:center}
-nav button{background:transparent;color:white;border:0;padding:9px;cursor:pointer}
-.container{max-width:900px;margin:20px auto;padding:12px}
-.card{background:white;padding:20px;border-radius:12px;margin-bottom:16px;box-shadow:0 2px 8px #0001}
+
+nav{
+ background:#1e40af;
+ padding:12px;
+ text-align:center;
+}
+
+nav button{
+ background:transparent;
+ color:white;
+ border:0;
+ padding:9px;
+ cursor:pointer;
+ font-size:15px;
+}
+
+.container{
+ max-width:900px;
+ margin:20px auto;
+ padding:12px;
+}
+
+.card{
+ background:white;
+ padding:20px;
+ border-radius:12px;
+ margin-bottom:16px;
+ box-shadow:0 2px 8px #0001;
+}
+
 h2{color:#1e40af;margin-top:0}
-input{width:100%;padding:12px;margin:7px 0;border:1px solid #cbd5e1;border-radius:7px}
-button.primary{background:#2563eb;color:white;border:0;padding:12px 18px;border-radius:7px;cursor:pointer;margin:5px}
-button.secondary{background:#475569;color:white;border:0;padding:12px 18px;border-radius:7px;cursor:pointer}
-.website{padding:12px;border:1px solid #e2e8f0;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}
+
+input{
+ width:100%;
+ padding:12px;
+ margin:7px 0;
+ border:1px solid #cbd5e1;
+ border-radius:7px;
+}
+
+button.primary{
+ background:#2563eb;
+ color:white;
+ border:0;
+ padding:12px 18px;
+ border-radius:7px;
+ cursor:pointer;
+ margin:5px;
+}
+
+button.secondary{
+ background:#475569;
+ color:white;
+ border:0;
+ padding:12px 18px;
+ border-radius:7px;
+ cursor:pointer;
+ margin:5px;
+}
+
+button.danger{
+ background:#dc2626;
+ color:white;
+ border:0;
+ padding:12px 18px;
+ border-radius:7px;
+ cursor:pointer;
+ margin:5px;
+}
+
+.website{
+ padding:12px;
+ border:1px solid #e2e8f0;
+ border-radius:8px;
+ margin:10px 0;
+ overflow-wrap:anywhere;
+}
+
 .website a{color:#2563eb}
-.hidden{display:none}
-#message{padding:12px;margin:10px 0;border-radius:7px;background:#dbeafe}
-footer{text-align:center;padding:25px;color:#64748b}
+
+.hidden{display:none !important}
+
+#message{
+ padding:12px;
+ margin:10px 0;
+ border-radius:7px;
+ background:#dbeafe;
+}
+
+footer{
+ text-align:center;
+ padding:25px;
+ color:#64748b;
+}
 </style>
 </head>
+
 <body>
 
 <header>
@@ -43,40 +140,63 @@ footer{text-align:center;padding:25px;color:#64748b}
 
 <div id="message" class="hidden"></div>
 
+<!-- HOME -->
+
 <section id="home" class="card">
 <h2>Welcome to Traffic Bot Pro</h2>
+
 <p>Discover and share websites with genuine visitors.</p>
+
 <p>Submit your website for admin approval and explore approved websites.</p>
-<button class="primary" onclick="showSection('account')">Get Started</button>
+
+<button class="primary" onclick="showSection('account')">
+Get Started
+</button>
 </section>
+
+<!-- ACCOUNT -->
 
 <section id="account" class="card">
 <h2>Register Account</h2>
+
 <input id="name" placeholder="Full Name">
 <input id="email" type="email" placeholder="Email Address">
 <input id="password" type="password" placeholder="Password">
+
 <button class="primary" onclick="register()">Register</button>
 
 <hr>
 
 <h2>Login</h2>
+
 <input id="loginEmail" type="email" placeholder="Email Address">
 <input id="loginPassword" type="password" placeholder="Password">
+
 <button class="primary" onclick="login()">Login</button>
 </section>
 
+<!-- DASHBOARD -->
+
 <section id="dashboard" class="hidden">
+
 <div class="card">
 <h2>My Dashboard</h2>
+
 <p id="userInfo">Please login first.</p>
+
 <button class="secondary" onclick="logout()">Logout</button>
 </div>
 
 <div class="card">
 <h2>Submit Your Website</h2>
+
 <input id="siteName" placeholder="Website Name">
 <input id="siteUrl" type="url" placeholder="https://example.com">
-<button class="primary" onclick="submitWebsite()">Submit Website</button>
+
+<button class="primary" onclick="submitWebsite()">
+Submit Website
+</button>
+
 <p>Submitted websites require admin approval.</p>
 </div>
 
@@ -92,10 +212,12 @@ footer{text-align:center;padding:25px;color:#64748b}
 
 <div class="card">
 <h2>Membership Plans</h2>
+
 <p>Free Membership: ₹0</p>
 <p>7 Days Premium: ₹99</p>
 <p>30 Days Premium: ₹299</p>
 <p>90 Days Premium: ₹999</p>
+
 <p>Premium payments are not active yet.</p>
 </div>
 
@@ -104,24 +226,40 @@ footer{text-align:center;padding:25px;color:#64748b}
 <p>Banner and video advertisements will appear here when configured.</p>
 </div>
 
-<!-- ADMIN PANEL -->
+<!-- ADMIN BUTTON -->
+
 <div class="card" id="adminCard" style="display:none;">
+
 <h2>Admin Panel</h2>
-<button onclick="showSection('adminSection');loadAdminWebsites()">
+
+<button class="primary"
+onclick="openAdminPanel()">
 Open Admin Panel
 </button>
+
 </div>
 
 </section>
-<!-- ADMIN APPROVAL -->
-<section id="adminSection" style="display:none;">
+
+<!-- ADMIN SECTION -->
+
+<section id="adminSection" class="hidden">
+
 <div class="card">
-<h2>Website Approval</h2>
+
+<h2>Admin Panel - Website Approval</h2>
+
 <div id="pendingWebsites">Loading...</div>
-<button onclick="showSection('dashboard')">Back to Dashboard</button>
+
+<button class="secondary"
+onclick="showSection('dashboard')">
+Back to Dashboard
+</button>
+
 </div>
+
 </section>
-  
+
 </div>
 
 <footer>
@@ -129,242 +267,572 @@ Traffic Bot Pro © 2026
 </footer>
 
 <script>
-const SUPABASE_URL = "https://tbqwecxhfsuzyqnewrns.supabase.co";
-const SUPABASE_KEY = "sb_publishable_IEj9oHtQYJMkdf8QBerxZQ_MU_6OVUn";
+
+// SUPABASE SETTINGS
+
+const SUPABASE_URL =
+"https://tbqwecxhfsuzyqnewrns.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_IEj9oHtQYJMkdf8QBerxZQ_MU_6OVUn";
 
 const db = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_KEY
+SUPABASE_URL,
+SUPABASE_KEY
 );
 
 let currentUser = null;
 
+
+// MESSAGE
+
 function message(text){
- const box=document.getElementById("message");
- box.textContent=text;
+
+ const box = document.getElementById("message");
+
+ box.textContent = text;
+
  box.classList.remove("hidden");
+
 }
+
+
+// SECTION NAVIGATION - FIXED
 
 function showSection(id){
- ["home","account","dashboard"].forEach(x=>{
-  document.getElementById(x).classList.add("hidden");
+
+ const sections = [
+  "home",
+  "account",
+  "dashboard",
+  "adminSection"
+ ];
+
+ sections.forEach(function(sectionId){
+
+  const section = document.getElementById(sectionId);
+
+  if(section){
+   section.classList.add("hidden");
+  }
+
  });
- document.getElementById(id).classList.remove("hidden");
+
+ const target = document.getElementById(id);
+
+ if(target){
+  target.classList.remove("hidden");
+ }
+
+ window.scrollTo(0,0);
+
 }
+
+
+// REGISTER
 
 async function register(){
- const name=document.getElementById("name").value.trim();
- const email=document.getElementById("email").value.trim();
- const password=document.getElementById("password").value;
 
- if(!name || !email || password.length<6){
+ const name = document.getElementById("name").value.trim();
+
+ const email = document.getElementById("email").value.trim();
+
+ const password = document.getElementById("password").value;
+
+ if(!name || !email || password.length < 6){
+
   message("Enter your name, email and password (minimum 6 characters).");
+
   return;
  }
 
- const {data,error}=await db.auth.signUp({
-  email,
-  password,
-  options:{data:{full_name:name}}
+ const {data,error} = await db.auth.signUp({
+
+  email:email,
+
+  password:password,
+
+  options:{
+   data:{
+    full_name:name
+   }
+  }
+
  });
 
- if(error){message(error.message);return;}
+ if(error){
+
+  message(error.message);
+
+  return;
+ }
 
  message("Registration submitted. Check your email if confirmation is required.");
+
 }
+
+
+// LOGIN
 
 async function login(){
- const email=document.getElementById("loginEmail").value.trim();
- const password=document.getElementById("loginPassword").value;
 
- const {data,error}=await db.auth.signInWithPassword({email,password});
+ const email = document.getElementById("loginEmail").value.trim();
 
- if(error){message(error.message);return;}
+ const password = document.getElementById("loginPassword").value;
 
- currentUser=data.user;
- await loadDashboard();
- showSection("dashboard");
- message("Login successful!");
-}
+ if(!email || !password){
 
-async function logout(){
- await db.auth.signOut();
- currentUser=null;
- document.getElementById("userInfo").textContent="Please login first.";
- showSection("home");
- message("You have logged out.");
-}
+  message("Enter email and password.");
 
-async function submitWebsite(){
- if(!currentUser){message("Please login first.");return;}
-
- const name=document.getElementById("siteName").value.trim();
- const url=document.getElementById("siteUrl").value.trim();
-
- try{
-  const parsed=new URL(url);
-  if(!["http:","https:"].includes(parsed.protocol)) throw new Error();
- }catch(e){
-  message("Enter a valid website URL starting with https://");
   return;
  }
 
- if(!name){message("Enter website name.");return;}
+ const {data,error} = await db.auth.signInWithPassword({
 
- const {error}=await db.from("websites").insert({
-  user_id:currentUser.id,
-  name:name,
-  url:url,
-  status:"pending"
+  email:email,
+
+  password:password
+
  });
 
- if(error){message(error.message);return;}
+ if(error){
 
- document.getElementById("siteName").value="";
- document.getElementById("siteUrl").value="";
- message("Website submitted successfully. Waiting for admin approval.");
+  message(error.message);
+
+  return;
+ }
+
+ currentUser = data.user;
+
  await loadDashboard();
+
+ showSection("dashboard");
+
+ message("Login successful!");
+
 }
 
+
+// LOGOUT
+
+async function logout(){
+
+ await db.auth.signOut();
+
+ currentUser = null;
+
+ document.getElementById("userInfo").textContent =
+ "Please login first.";
+
+ document.getElementById("adminCard").style.display = "none";
+
+ showSection("home");
+
+ message("You have logged out.");
+
+}
+
+
+// SUBMIT WEBSITE
+
+async function submitWebsite(){
+
+ if(!currentUser){
+
+  message("Please login first.");
+
+  return;
+ }
+
+ const name = document.getElementById("siteName").value.trim();
+
+ const url = document.getElementById("siteUrl").value.trim();
+
+ if(!name){
+
+  message("Enter website name.");
+
+  return;
+ }
+
+ try{
+
+  const parsed = new URL(url);
+
+  if(!["http:","https:"].includes(parsed.protocol)){
+   throw new Error();
+  }
+
+ }catch(e){
+
+  message("Enter a valid website URL starting with https://");
+
+  return;
+ }
+
+ const {error} = await db.from("websites").insert({
+
+  user_id:currentUser.id,
+
+  name:name,
+
+  url:url,
+
+  status:"pending"
+
+ });
+
+ if(error){
+
+  message(error.message);
+
+  return;
+ }
+
+ document.getElementById("siteName").value = "";
+
+ document.getElementById("siteUrl").value = "";
+
+ message("Website submitted successfully. Waiting for admin approval.");
+
+ await loadDashboard();
+
+}
+
+
+// LOAD DASHBOARD
+
 async function loadDashboard(){
+
  if(!currentUser)return;
 
- document.getElementById("userInfo").textContent=
- "Welcome, "+(currentUser.user_metadata.full_name || currentUser.email);
+ document.getElementById("userInfo").textContent =
+ "Welcome, " +
+ (currentUser.user_metadata.full_name || currentUser.email);
 
- // CHECK ADMIN ACCOUNT
- const {data:profile,error:profileError}=await db
+ // CHECK ADMIN
+
+ const {data:profile,error:profileError} = await db
  .from("profiles")
  .select("is_admin")
  .eq("id",currentUser.id)
- .single();
+ .maybeSingle();
 
- const adminCard=document.getElementById("adminCard");
+ const adminCard = document.getElementById("adminCard");
 
- if(adminCard){
-  adminCard.style.display=
-   (!profileError && profile && profile.is_admin===true)
-   ? "block" : "none";
+ if(
+  adminCard &&
+  !profileError &&
+  profile &&
+  profile.is_admin === true
+ ){
+
+  adminCard.style.display = "block";
+
+ }else if(adminCard){
+
+  adminCard.style.display = "none";
+
  }
 
  // MY WEBSITES
- const {data:mine,error:mineError}=await db.from("websites")
+
+ const {data:mine,error:mineError} = await db
+ .from("websites")
  .select("*")
  .eq("user_id",currentUser.id)
  .order("created_at",{ascending:false});
 
  if(mineError){
-  document.getElementById("myWebsites").textContent=mineError.message;
+
+  document.getElementById("myWebsites").textContent =
+  mineError.message;
+
  }else{
-  document.getElementById("myWebsites").innerHTML=
-   mine.length?mine.map(w=>`
-    <div class="website">
+
+  document.getElementById("myWebsites").innerHTML =
+  mine.length
+  ? mine.map(w=>`
+
+   <div class="website">
+
     <b>${escapeHTML(w.name)}</b><br>
+
     ${escapeHTML(w.url)}<br>
+
     Status: ${escapeHTML(w.status)}
-    </div>`).join(""):"No websites submitted yet.";
+
+   </div>
+
+  `).join("")
+  : "No websites submitted yet.";
+
  }
 
  await loadApproved();
+
 }
 
 
+// LOAD APPROVED WEBSITES
+
 async function loadApproved(){
- const box=document.getElementById("approvedWebsites");
- const {data,error}=await db.from("websites")
+
+ const box = document.getElementById("approvedWebsites");
+
+ const {data,error} = await db
+ .from("websites")
  .select("id,name,url,visits")
  .eq("status","approved")
  .order("created_at",{ascending:false});
 
- if(error){box.textContent=error.message;return;}
+ if(error){
 
- box.innerHTML=data.length?data.map(w=>`
+  box.textContent = error.message;
+
+  return;
+ }
+
+ box.innerHTML = data.length
+ ? data.map(w=>`
+
   <div class="website">
+
    <b>${escapeHTML(w.name)}</b><br>
-   <a href="${escapeHTML(w.url)}" target="_blank" rel="noopener noreferrer">
-   Visit Website
+
+   <a href="${escapeHTML(w.url)}"
+      target="_blank"
+      rel="noopener noreferrer">
+
+      Visit Website
+
    </a>
-   <br>Recorded visits: ${Number(w.visits)||0}
-  </div>`).join(""):"No approved websites yet.";
+
+   <br>
+
+   Recorded visits: ${Number(w.visits)||0}
+
+  </div>
+
+ `).join("")
+ : "No approved websites yet.";
+
 }
+
+
+// ESCAPE HTML
 
 function escapeHTML(value){
- return String(value).replace(/[&<>"']/g,c=>({
-  "&":"&amp;","<":"&lt;",">":"&gt;",
-  '"':"&quot;","'":"&#39;"
- }[c]));
+
+ return String(value).replace(/[&<>"']/g,function(c){
+
+  return {
+
+   "&":"&amp;",
+   "<":"&lt;",
+   ">":"&gt;",
+   '"':"&quot;",
+   "'":"&#39;"
+
+  }[c];
+
+ });
+
 }
 
-db.auth.onAuthStateChange((event,session)=>{
- if(session){
-  currentUser=session.user;
+
+// OPEN ADMIN PANEL
+
+async function openAdminPanel(){
+
+ if(!currentUser){
+
+  message("Please login first.");
+
+  return;
  }
-});
+
+ showSection("adminSection");
+
+ await loadAdminWebsites();
+
+}
+
+
+// LOAD ADMIN WEBSITES
+
+async function loadAdminWebsites(){
+
+ const box = document.getElementById("pendingWebsites");
+
+ box.textContent = "Loading...";
+
+ if(!currentUser){
+
+  box.textContent = "Please login first.";
+
+  return;
+ }
+
+ // VERIFY ADMIN
+
+ const {data:profile,error:profileError} = await db
+ .from("profiles")
+ .select("is_admin")
+ .eq("id",currentUser.id)
+ .maybeSingle();
+
+ if(profileError){
+
+  box.textContent = "Profile Error: " + profileError.message;
+
+  return;
+ }
+
+ if(!profile || profile.is_admin !== true){
+
+  box.textContent = "Admin access denied.";
+
+  return;
+ }
+
+ // GET PENDING WEBSITES
+
+ const {data,error} = await db
+ .from("websites")
+ .select("id,name,url,status")
+ .eq("status","pending")
+ .order("created_at",{ascending:false});
+
+ if(error){
+
+  box.textContent = "Website Error: " + error.message;
+
+  return;
+ }
+
+ if(!data || data.length === 0){
+
+  box.textContent = "No pending websites.";
+
+  return;
+ }
+
+ box.innerHTML = data.map(site=>`
+
+  <div class="website">
+
+   <h3>${escapeHTML(site.name)}</h3>
+
+   <p>
+    <a href="${escapeHTML(site.url)}"
+       target="_blank"
+       rel="noopener noreferrer">
+
+       Visit Website
+
+    </a>
+   </p>
+
+   <p>Status: ${escapeHTML(site.status)}</p>
+
+   <button class="primary"
+    onclick="updateWebsiteStatus('${site.id}','approved')">
+
+    Approve
+
+   </button>
+
+   <button class="danger"
+    onclick="updateWebsiteStatus('${site.id}','rejected')">
+
+    Reject
+
+   </button>
+
+  </div>
+
+ `).join("");
+
+}
+
+
+// APPROVE OR REJECT WEBSITE
+
+async function updateWebsiteStatus(id,status){
+
+ if(!currentUser){
+
+  message("Please login first.");
+
+  return;
+ }
+
+ if(!["approved","rejected"].includes(status)){
+
+  message("Invalid website status.");
+
+  return;
+ }
+
+ const {error} = await db
+ .from("websites")
+ .update({status:status})
+ .eq("id",id);
+
+ if(error){
+
+  alert("Error: " + error.message);
+
+  return;
+ }
+
+ alert("Website " + status + " successfully!");
+
+ await loadAdminWebsites();
+
+}
+
+
+// CHECK LOGIN SESSION
 
 async function checkSession(){
- const {data}=await db.auth.getSession();
- if(data.session){
-  currentUser=data.session.user;
-  await loadDashboard();
+
+ const {data,error} = await db.auth.getSession();
+
+ if(error){
+
+  console.error(error.message);
+
+  return;
  }
+
+ if(data.session){
+
+  currentUser = data.session.user;
+
+  await loadDashboard();
+
+  showSection("dashboard");
+
+ }
+
 }
 
-async function loadAdminWebsites() {
-  const box = document.getElementById("pendingWebsites");
-  box.innerHTML = "Loading...";
 
-  const { data: profile } = await db
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", currentUser.id)
-    .single();
+// AUTH STATE
 
-  if (!profile || profile.is_admin !== true) {
-    box.innerHTML = "Admin access denied.";
-    return;
-  }
+db.auth.onAuthStateChange((event,session)=>{
 
-  const { data, error } = await db
-    .from("websites")
-    .select("id,name,url,status")
-    .eq("status", "pending");
+ currentUser = session ? session.user : null;
 
-  if (error) {
-    box.innerHTML = "Error: " + error.message;
-    return;
-  }
+});
 
-  if (!data || data.length === 0) {
-    box.innerHTML = "No pending websites.";
-    return;
-  }
 
-  box.innerHTML = data.map(site => `
-    <div class="card">
-      <h3>${escapeHTML(site.name)}</h3>
-      <p><a href="${escapeHTML(site.url)}" target="_blank" rel="noopener">Visit Website</a></p>
-      <button onclick="updateWebsiteStatus('${site.id}','approved')">Approve</button>
-      <button onclick="updateWebsiteStatus('${site.id}','rejected')">Reject</button>
-    </div>
-  `).join("");
-}
-
-async function updateWebsiteStatus(id, status) {
-  const { error } = await db
-    .from("websites")
-    .update({ status: status })
-    .eq("id", id);
-
-  if (error) {
-    alert("Error: " + error.message);
-    return;
-  }
-
-  alert("Website " + status + " successfully!");
-  await loadAdminWebsites();
-}
+// START
 
 checkSession();
+
 </script>
 
 </body>
