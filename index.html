@@ -103,6 +103,24 @@ footer{text-align:center;padding:25px;color:#64748b}
 <h2>Advertisement Space</h2>
 <p>Banner and video advertisements will appear here when configured.</p>
 </div>
+
+<!-- ADMIN PANEL -->
+<div class="card" id="adminCard" style="display:none;">
+<h2>Admin Panel</h2>
+<button onclick="showSection('adminSection');loadAdminWebsites()">
+Open Admin Panel
+</button>
+</div>
+
+<!-- ADMIN APPROVAL -->
+<section id="adminSection" style="display:none;">
+<div class="card">
+<h2>Website Approval</h2>
+<div id="pendingWebsites">Loading...</div>
+<button onclick="showSection('dashboard')">Back to Dashboard</button>
+</div>
+</section>
+
 </section>
 
 </div>
@@ -273,6 +291,61 @@ async function checkSession(){
   currentUser=data.session.user;
   await loadDashboard();
  }
+}
+
+async function loadAdminWebsites() {
+  const box = document.getElementById("pendingWebsites");
+  box.innerHTML = "Loading...";
+
+  const { data: profile } = await db
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", currentUser.id)
+    .single();
+
+  if (!profile || profile.is_admin !== true) {
+    box.innerHTML = "Admin access denied.";
+    return;
+  }
+
+  const { data, error } = await db
+    .from("websites")
+    .select("id,name,url,status")
+    .eq("status", "pending");
+
+  if (error) {
+    box.innerHTML = "Error: " + error.message;
+    return;
+  }
+
+  if (!data || data.length === 0) {
+    box.innerHTML = "No pending websites.";
+    return;
+  }
+
+  box.innerHTML = data.map(site => `
+    <div class="card">
+      <h3>${escapeHTML(site.name)}</h3>
+      <p><a href="${escapeHTML(site.url)}" target="_blank" rel="noopener">Visit Website</a></p>
+      <button onclick="updateWebsiteStatus('${site.id}','approved')">Approve</button>
+      <button onclick="updateWebsiteStatus('${site.id}','rejected')">Reject</button>
+    </div>
+  `).join("");
+}
+
+async function updateWebsiteStatus(id, status) {
+  const { error } = await db
+    .from("websites")
+    .update({ status: status })
+    .eq("id", id);
+
+  if (error) {
+    alert("Error: " + error.message);
+    return;
+  }
+
+  alert("Website " + status + " successfully!");
+  await loadAdminWebsites();
 }
 
 checkSession();
