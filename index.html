@@ -9,7 +9,7 @@
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b}
-header{background:#0f172a;color:white;padding:18px;text-align:center}
+header{background:#0f172a;color:white;padding:20px;text-align:center}
 header h1{margin:0 0 6px}
 nav{background:#1e293b;padding:12px;text-align:center}
 nav button{background:transparent;color:white;border:0;padding:10px 14px;cursor:pointer;font-size:15px}
@@ -37,7 +37,6 @@ th{background:#eff6ff}
 .table-wrap{overflow-x:auto}
 footer{text-align:center;padding:20px;color:#64748b}
 .user-card{border:1px solid #cbd5e1;padding:15px;border-radius:10px;margin:12px 0}
-.user-card h3{margin-top:0}
 .user-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:600px){
  .user-controls{grid-template-columns:1fr}
@@ -68,6 +67,7 @@ footer{text-align:center;padding:20px;color:#64748b}
 <h2>Welcome to Traffic Bot Pro</h2>
 <p>Discover and share websites with real visitors from around the world.</p>
 <p>Submit your website for admin approval and explore approved websites.</p>
+<p class="small">Visits are voluntary. Visitors are not guaranteed. Do not use this platform to generate fake traffic, forced visits, or invalid advertising activity.</p>
 <button class="primary" onclick="showSection('accountSection')">Get Started</button>
 </div>
 </section>
@@ -108,7 +108,7 @@ footer{text-align:center;padding:20px;color:#64748b}
 <input id="websiteName" type="text" placeholder="Website Name">
 <input id="websiteUrl" type="url" placeholder="https://example.com">
 <button class="primary" onclick="submitWebsite()">Submit Website</button>
-<p class="small">Submitted websites require admin approval. Only websites you own or have permission to promote should be submitted.</p>
+<p class="small">Only submit websites you own or have permission to promote. Admin approval is required.</p>
 <div id="submitMessage"></div>
 </div>
 
@@ -126,12 +126,40 @@ footer{text-align:center;padding:20px;color:#64748b}
 <div class="card">
 <h2>Membership Plans</h2>
 <div class="grid">
-<div class="plan"><h3>Free</h3><h2>₹0</h2><p>Free Membership</p></div>
-<div class="plan"><h3>7 Days</h3><h2>₹99</h2><p>Premium Plan</p></div>
-<div class="plan"><h3>30 Days</h3><h2>₹299</h2><p>Premium Plan</p></div>
-<div class="plan"><h3>90 Days</h3><h2>₹999</h2><p>Premium Plan</p></div>
+
+<div class="plan">
+<h3>Free</h3>
+<h2>₹0</h2>
+<p>1 Website</p>
+<p>5 Visits Per Day</p>
 </div>
-<p class="small">Premium payments are not activated yet. Do not make any payment through this page.</p>
+
+<div class="plan">
+<h3>Basic</h3>
+<h2>₹99</h2>
+<p>7 Days</p>
+<p>3 Websites</p>
+<p>30 Visits Per Day</p>
+</div>
+
+<div class="plan">
+<h3>Premium</h3>
+<h2>₹299</h2>
+<p>30 Days</p>
+<p>10 Websites</p>
+<p>100 Visits Per Day</p>
+</div>
+
+<div class="plan">
+<h3>Premium Plus</h3>
+<h2>₹999</h2>
+<p>120 Days</p>
+<p>30 Websites</p>
+<p>300 Visits Per Day</p>
+</div>
+
+</div>
+<p class="small">Payment Gateway is not activated. These plans are currently display-only. Do not make any payment through this page.</p>
 </div>
 
 <div class="card">
@@ -167,7 +195,7 @@ footer{text-align:center;padding:20px;color:#64748b}
 
 <div class="card">
 <h2>👥 Admin User Management</h2>
-<p class="small">View registered users and manage their membership and expiry date.</p>
+<p class="small">Manage user membership and expiry date.</p>
 <button class="primary" onclick="loadAdminUsers()">Refresh User List</button>
 <div id="adminUsers">Press Refresh User List to load users.</div>
 </div>
@@ -202,6 +230,8 @@ footer{text-align:center;padding:20px;color:#64748b}
 <footer>Traffic Bot Pro © 2026</footer>
 
 <script>
+
+/* SUPABASE CONFIGURATION */
 
 const SUPABASE_URL = "https://tbqwecxhfsuzyqnewrns.supabase.co";
 const SUPABASE_KEY = "sb_publishable_IEj9oHtQYJMkdf8QBerxZQ_MU_6OVUn";
@@ -242,6 +272,8 @@ function showSection(sectionId){
  el(sectionId).classList.remove("hidden");
 }
 
+/* PROFILE */
+
 async function getProfile(){
  if(!currentUser)return null;
 
@@ -259,7 +291,7 @@ async function getProfile(){
  return data;
 }
 
-/* AUTOMATIC MEMBERSHIP EXPIRY */
+/* MEMBERSHIP EXPIRY */
 
 async function checkMembershipExpiry(){
  if(!currentUser)return null;
@@ -268,10 +300,7 @@ async function checkMembershipExpiry(){
 
  if(error){
   console.error("Membership expiry check:",error);
-  return {
-   success:false,
-   error:error.message
-  };
+  return {success:false,error:error.message};
  }
 
  return data;
@@ -291,20 +320,14 @@ function displayMembership(){
 
  if(expiry){
   const date=new Date(expiry);
-  expiryText=Number.isNaN(date.getTime())
-   ?"Invalid date"
-   :date.toLocaleString();
-
+  expiryText=Number.isNaN(date.getTime())?"Invalid date":date.toLocaleString();
   status=date.getTime()<=Date.now()?"Expired":"Active";
  }
 
  el("membershipInfo").innerHTML=
-  "<strong>Membership:</strong> "+
-  escapeHTML(membership)+
-  "<br><strong>Expiry:</strong> "+
-  escapeHTML(expiryText)+
-  "<br><strong>Status:</strong> "+
-  escapeHTML(status);
+  "<strong>Membership:</strong> "+escapeHTML(membership)+
+  "<br><strong>Expiry:</strong> "+escapeHTML(expiryText)+
+  "<br><strong>Status:</strong> "+escapeHTML(status);
 }
 
 /* REGISTRATION */
@@ -384,10 +407,13 @@ async function login(){
 
 async function logout(){
  await db.auth.signOut();
+
  currentUser=null;
  currentProfile=null;
+
  el("navLogout").classList.add("hidden");
  el("adminCard").classList.add("hidden");
+
  showSection("homeSection");
 }
 
@@ -413,7 +439,6 @@ async function loadDashboard(){
 
  el("dashboardMessage").innerHTML="";
 
- /* Expiry is checked before loading the profile. */
  const expiryResult=await checkMembershipExpiry();
 
  currentProfile=await getProfile();
@@ -449,9 +474,10 @@ async function loadDashboard(){
  ]);
 }
 
-/* WEBSITE SUBMISSION */
+/* WEBSITE SUBMISSION - SECURE RPC */
 
 async function submitWebsite(){
+
  if(!currentUser){
   showSection("accountSection");
   return;
@@ -479,24 +505,33 @@ async function submitWebsite(){
   return;
  }
 
- const {error}=await db
-  .from("websites")
-  .insert({
-   user_id:currentUser.id,
-   name:name,
-   url:parsedUrl.href,
-   status:"pending"
-  });
+ const {data,error}=await db.rpc(
+  "submit_website",
+  {
+   p_name:name,
+   p_url:parsedUrl.href
+  }
+ );
 
  if(error){
   showMessage("submitMessage",error.message);
   return;
  }
 
+ if(!data||data.success!==true){
+  showMessage("submitMessage",data?.message||"Website submission failed.");
+  return;
+ }
+
  el("websiteName").value="";
  el("websiteUrl").value="";
 
- showMessage("submitMessage","Website submitted successfully. Waiting for admin approval.");
+ showMessage(
+  "submitMessage",
+  data.message+
+  " Websites used: "+data.used+"/"+data.limit+
+  ". Remaining: "+data.remaining
+ );
 
  await loadMyWebsites();
 }
@@ -505,6 +540,11 @@ async function submitWebsite(){
 
 async function loadMyWebsites(){
  const box=el("myWebsites");
+
+ if(!currentUser){
+  box.textContent="Please login.";
+  return;
+ }
 
  const {data,error}=await db
   .from("websites")
@@ -537,6 +577,11 @@ async function loadMyWebsites(){
 async function loadApproved(){
  const box=el("approvedWebsites");
 
+ if(!currentUser){
+  box.textContent="Please login.";
+  return;
+ }
+
  const {data,error}=await db
   .from("websites")
   .select("id,name,url,visits,user_id")
@@ -568,11 +613,12 @@ async function loadApproved(){
 async function detectCountry(){
  try{
   const response=await fetch("https://ipapi.co/json/");
+
   if(!response.ok)return "Unknown";
 
   const info=await response.json();
-
   return info.country_name||"Unknown";
+
  }catch(error){
   console.log("Country detection unavailable:",error);
   return "Unknown";
@@ -582,10 +628,14 @@ async function detectCountry(){
 /* VISIT WEBSITE */
 
 async function visitWebsite(websiteId){
+
  if(!currentUser){
   showSection("accountSection");
   return;
  }
+
+ /* Open a blank tab immediately to reduce popup blocking. */
+ const visitTab=window.open("about:blank","_blank");
 
  const country=await detectCountry();
 
@@ -598,11 +648,13 @@ async function visitWebsite(websiteId){
  );
 
  if(error){
+  if(visitTab)visitTab.close();
   alert("Visit error: "+error.message);
   return;
  }
 
  if(!data||data.success!==true){
+  if(visitTab)visitTab.close();
   alert(data?.message||"Visit could not be recorded.");
   return;
  }
@@ -615,14 +667,17 @@ async function visitWebsite(websiteId){
   .maybeSingle();
 
  if(siteError||!site){
+  if(visitTab)visitTab.close();
   alert("Website could not be opened.");
   await loadApproved();
   return;
  }
 
- alert("Visit recorded successfully. The website will now open.");
-
- window.open(site.url,"_blank","noopener,noreferrer");
+ if(visitTab){
+  visitTab.location.href=site.url;
+ }else{
+  window.location.href=site.url;
+ }
 
  await Promise.all([
   loadApproved(),
@@ -633,6 +688,7 @@ async function visitWebsite(websiteId){
 /* ADMIN PANEL */
 
 async function openAdminPanel(){
+
  if(!currentUser){
   showSection("accountSection");
   return;
@@ -659,6 +715,7 @@ async function openAdminPanel(){
 /* ADMIN WEBSITE APPROVAL */
 
 async function loadAdminWebsites(){
+
  const box=el("pendingWebsites");
 
  const {data,error}=await db
@@ -689,6 +746,7 @@ async function loadAdminWebsites(){
 }
 
 async function updateWebsiteStatus(websiteId,status){
+
  if(!currentUser||!currentProfile||currentProfile.is_admin!==true){
   alert("Admin access denied.");
   return;
@@ -715,6 +773,7 @@ async function updateWebsiteStatus(websiteId,status){
 /* ADMIN REPORTS */
 
 async function loadAdminReport(){
+
  if(!currentUser){
   showMessage("reportMessage","Please login first.");
   return;
@@ -739,7 +798,8 @@ async function loadAdminReport(){
  el("reportRejectedWebsites").textContent=Number(data.rejected_websites||0);
  el("reportTotalVisits").textContent=Number(data.total_visits||0);
 
- el("reportMessage").innerHTML='<div class="message">Reports updated successfully.</div>';
+ el("reportMessage").innerHTML=
+  '<div class="message">Reports updated successfully.</div>';
 }
 
 /* ADMIN USER MANAGEMENT */
@@ -769,6 +829,7 @@ function toLocalDateTime(value){
 }
 
 async function loadAdminUsers(){
+
  const box=el("adminUsers");
 
  if(!currentUser||!currentProfile||currentProfile.is_admin!==true){
@@ -791,50 +852,61 @@ async function loadAdminUsers(){
  }
 
  box.innerHTML=data.map(user=>{
+
   const membership=user.membership||"Free";
   const expiry=user.membership_expires_at||"";
-  const expired=expiry && new Date(expiry).getTime()<=Date.now();
+  const expired=expiry&&new Date(expiry).getTime()<=Date.now();
 
   return `
    <div class="user-card">
+
     <h3>${escapeHTML(user.full_name||"Unnamed User")}</h3>
+
     <p>Email: ${escapeHTML(user.email||"Not available")}</p>
+
     <p>Role:
      <span class="badge">
       ${user.is_admin===true?"Administrator":"Normal User"}
      </span>
     </p>
+
     <p>Current Membership:
      <strong>${escapeHTML(membership)}</strong>
     </p>
+
     <p>Expiry:
      <strong>${escapeHTML(formatExpiry(expiry))}</strong>
     </p>
-    <p>
-     Status:
+
+    <p>Status:
      <span class="badge">
       ${expired?"Expired":(expiry?"Active":"No expiry set")}
      </span>
     </p>
 
     <div class="user-controls">
+
      <div>
       <label>Change Membership</label>
+
       <select id="membership_${user.id}">
-       <option value="Free" ${membership.toLowerCase()==="free"?"selected":""}>Free</option>
-       <option value="Basic" ${membership.toLowerCase()==="basic"?"selected":""}>Basic</option>
-       <option value="Premium" ${membership.toLowerCase()==="premium"?"selected":""}>Premium</option>
+       <option value="Free" ${membership==="Free"?"selected":""}>Free</option>
+       <option value="Basic" ${membership==="Basic"?"selected":""}>Basic</option>
+       <option value="Premium" ${membership==="Premium"?"selected":""}>Premium</option>
+       <option value="Premium Plus" ${membership==="Premium Plus"?"selected":""}>Premium Plus</option>
       </select>
      </div>
 
      <div>
       <label>Membership Expiry Date</label>
+
       <input
        type="datetime-local"
        id="expiry_${user.id}"
        value="${escapeHTML(toLocalDateTime(expiry))}"
       >
      </div>
+
     </div>
 
     <button
@@ -843,12 +915,15 @@ async function loadAdminUsers(){
     >
      Update Membership
     </button>
+
    </div>
   `;
+
  }).join("");
 }
 
 async function saveMembership(userId){
+
  if(!currentUser||!currentProfile||currentProfile.is_admin!==true){
   alert("Admin access denied.");
   return;
@@ -860,8 +935,9 @@ async function saveMembership(userId){
  let expiresAt=null;
 
  if(membership!=="Free"){
+
   if(!expiryValue){
-   alert("Please select an expiry date for Basic or Premium membership.");
+   alert("Please select an expiry date for paid membership.");
    return;
   }
 
@@ -907,6 +983,7 @@ async function saveMembership(userId){
 /* COUNTRY REPORT */
 
 async function loadCountryReport(){
+
  const box=el("countryReport");
  box.textContent="Loading country reports...";
 
@@ -924,19 +1001,22 @@ async function loadCountryReport(){
 
  box.innerHTML=`
   <div class="table-wrap">
-  <table>
-   <thead>
-    <tr><th>Country</th><th>Recorded Visits</th></tr>
-   </thead>
-   <tbody>
-    ${data.map(row=>`
+   <table>
+    <thead>
      <tr>
-      <td>${escapeHTML(row.country)}</td>
-      <td>${Number(row.total_visits||0)}</td>
+      <th>Country</th>
+      <th>Recorded Visits</th>
      </tr>
-    `).join("")}
-   </tbody>
-  </table>
+    </thead>
+    <tbody>
+     ${data.map(row=>`
+      <tr>
+       <td>${escapeHTML(row.country)}</td>
+       <td>${Number(row.total_visits||0)}</td>
+      </tr>
+     `).join("")}
+    </tbody>
+   </table>
   </div>
  `;
 }
@@ -944,6 +1024,7 @@ async function loadCountryReport(){
 /* VISITOR HISTORY */
 
 async function loadVisitHistory(){
+
  const box=el("visitHistory");
  box.textContent="Loading visitor history...";
 
@@ -961,26 +1042,26 @@ async function loadVisitHistory(){
 
  box.innerHTML=`
   <div class="table-wrap">
-  <table>
-   <thead>
-    <tr>
-     <th>Website</th>
-     <th>Country</th>
-     <th>Visitor ID</th>
-     <th>Visit Date & Time</th>
-    </tr>
-   </thead>
-   <tbody>
-    ${data.map(row=>`
+   <table>
+    <thead>
      <tr>
-      <td>${escapeHTML(row.website_name)}</td>
-      <td>${escapeHTML(row.country)}</td>
-      <td>${escapeHTML(row.visitor_id)}</td>
-      <td>${escapeHTML(new Date(row.visited_at).toLocaleString())}</td>
+      <th>Website</th>
+      <th>Country</th>
+      <th>Visitor ID</th>
+      <th>Visit Date & Time</th>
      </tr>
-    `).join("")}
-   </tbody>
-  </table>
+    </thead>
+    <tbody>
+     ${data.map(row=>`
+      <tr>
+       <td>${escapeHTML(row.website_name)}</td>
+       <td>${escapeHTML(row.country)}</td>
+       <td>${escapeHTML(row.visitor_id)}</td>
+       <td>${escapeHTML(new Date(row.visited_at).toLocaleString())}</td>
+      </tr>
+     `).join("")}
+    </tbody>
+   </table>
   </div>
  `;
 }
@@ -988,6 +1069,7 @@ async function loadVisitHistory(){
 /* SESSION CHECK */
 
 async function checkSession(){
+
  const {data,error}=await db.auth.getSession();
 
  if(error){
@@ -1004,11 +1086,15 @@ async function checkSession(){
 }
 
 db.auth.onAuthStateChange((event,session)=>{
+
  if(event==="SIGNED_OUT"){
+
   currentUser=null;
   currentProfile=null;
+
   el("navLogout").classList.add("hidden");
   el("adminCard").classList.add("hidden");
+
   showSection("homeSection");
  }
 });
