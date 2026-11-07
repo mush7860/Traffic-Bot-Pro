@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Traffic Bot Pro - Worldwide Traffic Exchange</title>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
@@ -99,6 +98,7 @@ footer{text-align:center;padding:20px;color:#64748b}
 <div class="card">
 <h2>My Dashboard</h2>
 <p id="welcomeText">Welcome!</p>
+<div id="membershipInfo" class="message">Loading membership...</div>
 <button class="primary danger" onclick="logout()">Logout</button>
 <div id="dashboardMessage"></div>
 </div>
@@ -165,7 +165,6 @@ footer{text-align:center;padding:20px;color:#64748b}
 </div>
 </div>
 
-<!-- NEW USER MANAGEMENT -->
 <div class="card">
 <h2>👥 Admin User Management</h2>
 <p class="small">View registered users and manage their membership and expiry date.</p>
@@ -260,6 +259,56 @@ async function getProfile(){
  return data;
 }
 
+/* AUTOMATIC MEMBERSHIP EXPIRY */
+
+async function checkMembershipExpiry(){
+ if(!currentUser)return null;
+
+ const {data,error}=await db.rpc("check_my_membership_expiry");
+
+ if(error){
+  console.error("Membership expiry check:",error);
+  return {
+   success:false,
+   error:error.message
+  };
+ }
+
+ return data;
+}
+
+function displayMembership(){
+ if(!currentProfile){
+  el("membershipInfo").textContent="Membership information unavailable.";
+  return;
+ }
+
+ const membership=currentProfile.membership||"Free";
+ const expiry=currentProfile.membership_expires_at;
+
+ let expiryText="No expiry date";
+ let status="Active";
+
+ if(expiry){
+  const date=new Date(expiry);
+  expiryText=Number.isNaN(date.getTime())
+   ?"Invalid date"
+   :date.toLocaleString();
+
+  status=date.getTime()<=Date.now()?"Expired":"Active";
+ }
+
+ el("membershipInfo").innerHTML=
+  "<strong>Membership:</strong> "+
+  escapeHTML(membership)+
+  "<br><strong>Expiry:</strong> "+
+  escapeHTML(expiryText)+
+  "<br><strong>Status:</strong> "+
+  escapeHTML(status);
+}
+
+/* REGISTRATION */
+
 async function register(){
  const name=el("regName").value.trim();
  const email=el("regEmail").value.trim();
@@ -306,6 +355,8 @@ async function register(){
  );
 }
 
+/* LOGIN */
+
 async function login(){
  const email=el("loginEmail").value.trim();
  const password=el("loginPassword").value;
@@ -329,6 +380,8 @@ async function login(){
  await loadDashboard();
 }
 
+/* LOGOUT */
+
 async function logout(){
  await db.auth.signOut();
  currentUser=null;
@@ -337,6 +390,8 @@ async function logout(){
  el("adminCard").classList.add("hidden");
  showSection("homeSection");
 }
+
+/* DASHBOARD */
 
 async function showDashboard(){
  const {data}=await db.auth.getSession();
@@ -355,6 +410,11 @@ async function loadDashboard(){
   showSection("accountSection");
   return;
  }
+
+ el("dashboardMessage").innerHTML="";
+
+ /* Expiry is checked before loading the profile. */
+ const expiryResult=await checkMembershipExpiry();
 
  currentProfile=await getProfile();
 
@@ -375,6 +435,12 @@ async function loadDashboard(){
   el("adminCard").classList.add("hidden");
  }
 
+ displayMembership();
+
+ if(expiryResult && expiryResult.success===false){
+  showMessage("dashboardMessage","Membership expiry check could not be completed. Please contact administrator.");
+ }
+
  showSection("dashboardSection");
 
  await Promise.all([
@@ -382,6 +448,8 @@ async function loadDashboard(){
   loadApproved()
  ]);
 }
+
+/* WEBSITE SUBMISSION */
 
 async function submitWebsite(){
  if(!currentUser){
@@ -433,6 +501,8 @@ async function submitWebsite(){
  await loadMyWebsites();
 }
 
+/* MY WEBSITES */
+
 async function loadMyWebsites(){
  const box=el("myWebsites");
 
@@ -461,6 +531,8 @@ async function loadMyWebsites(){
   </div>
  `).join("");
 }
+
+/* APPROVED WEBSITES */
 
 async function loadApproved(){
  const box=el("approvedWebsites");
@@ -491,6 +563,8 @@ async function loadApproved(){
  `).join("");
 }
 
+/* COUNTRY DETECTION */
+
 async function detectCountry(){
  try{
   const response=await fetch("https://ipapi.co/json/");
@@ -504,6 +578,8 @@ async function detectCountry(){
   return "Unknown";
  }
 }
+
+/* VISIT WEBSITE */
 
 async function visitWebsite(websiteId){
  if(!currentUser){
@@ -554,6 +630,8 @@ async function visitWebsite(websiteId){
  ]);
 }
 
+/* ADMIN PANEL */
+
 async function openAdminPanel(){
  if(!currentUser){
   showSection("accountSection");
@@ -577,6 +655,8 @@ async function openAdminPanel(){
   loadVisitHistory()
  ]);
 }
+
+/* ADMIN WEBSITE APPROVAL */
 
 async function loadAdminWebsites(){
  const box=el("pendingWebsites");
@@ -632,6 +712,8 @@ async function updateWebsiteStatus(websiteId,status){
  ]);
 }
 
+/* ADMIN REPORTS */
+
 async function loadAdminReport(){
  if(!currentUser){
   showMessage("reportMessage","Please login first.");
@@ -660,7 +742,7 @@ async function loadAdminReport(){
  el("reportMessage").innerHTML='<div class="message">Reports updated successfully.</div>';
 }
 
-/* NEW: ADMIN USER LIST */
+/* ADMIN USER MANAGEMENT */
 
 function formatExpiry(value){
  if(!value)return "No expiry date";
@@ -711,7 +793,7 @@ async function loadAdminUsers(){
  box.innerHTML=data.map(user=>{
   const membership=user.membership||"Free";
   const expiry=user.membership_expires_at||"";
-  const expired=expiry && new Date(expiry).getTime()<Date.now();
+  const expired=expiry && new Date(expiry).getTime()<=Date.now();
 
   return `
    <div class="user-card">
@@ -739,9 +821,9 @@ async function loadAdminUsers(){
      <div>
       <label>Change Membership</label>
       <select id="membership_${user.id}">
-       <option value="Free" ${membership==="Free"?"selected":""}>Free</option>
-       <option value="Basic" ${membership==="Basic"?"selected":""}>Basic</option>
-       <option value="Premium" ${membership==="Premium"?"selected":""}>Premium</option>
+       <option value="Free" ${membership.toLowerCase()==="free"?"selected":""}>Free</option>
+       <option value="Basic" ${membership.toLowerCase()==="basic"?"selected":""}>Basic</option>
+       <option value="Premium" ${membership.toLowerCase()==="premium"?"selected":""}>Premium</option>
       </select>
      </div>
 
@@ -902,6 +984,8 @@ async function loadVisitHistory(){
   </div>
  `;
 }
+
+/* SESSION CHECK */
 
 async function checkSession(){
  const {data,error}=await db.auth.getSession();
