@@ -233,6 +233,22 @@ async function loadDashboard(){
  document.getElementById("userInfo").textContent=
  "Welcome, "+(currentUser.user_metadata.full_name || currentUser.email);
 
+ // CHECK ADMIN ACCOUNT
+ const {data:profile,error:profileError}=await db
+ .from("profiles")
+ .select("is_admin")
+ .eq("id",currentUser.id)
+ .single();
+
+ const adminCard=document.getElementById("adminCard");
+
+ if(adminCard){
+  adminCard.style.display=
+   (!profileError && profile && profile.is_admin===true)
+   ? "block" : "none";
+ }
+
+ // MY WEBSITES
  const {data:mine,error:mineError}=await db.from("websites")
  .select("*")
  .eq("user_id",currentUser.id)
@@ -252,6 +268,7 @@ async function loadDashboard(){
 
  await loadApproved();
 }
+
 
 async function loadApproved(){
  const box=document.getElementById("approvedWebsites");
