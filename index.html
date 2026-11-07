@@ -1,844 +1,416 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Traffic Bot Pro - Worldwide Traffic Exchange</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f1f5f9;color:#1e293b}
-header{background:#0f172a;color:white;padding:20px;text-align:center}
-header h1{margin:0 0 6px}
-nav{background:#1e293b;padding:12px;text-align:center}
-nav button{background:transparent;color:white;border:0;padding:10px 14px;cursor:pointer;font-size:15px}
-nav button:hover{background:#334155}
-.container{max-width:1100px;margin:20px auto;padding:12px}
-.card{background:white;padding:20px;margin:15px 0;border-radius:12px;box-shadow:0 2px 10px #00000012}
-input,select{width:100%;padding:12px;margin:7px 0 14px;border:1px solid #cbd5e1;border-radius:7px;font-size:15px}
-button.primary{background:#2563eb;color:white;border:0;padding:11px 17px;border-radius:7px;cursor:pointer;margin:3px}
-button.success{background:#16a34a}
-button.danger{background:#dc2626}
-button.secondary{background:#475569}
-.hidden{display:none!important}
-.message{padding:10px;border-radius:7px;margin:10px 0;background:#eff6ff;color:#1d4ed8;overflow-wrap:anywhere}
-.item{border:1px solid #e2e8f0;padding:14px;border-radius:8px;margin:10px 0;overflow-wrap:anywhere}
-.item a{overflow-wrap:anywhere}
-.badge{display:inline-block;padding:5px 9px;border-radius:20px;background:#e2e8f0;font-size:12px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
-.stat{background:#eff6ff;border:1px solid #bfdbfe;padding:18px;border-radius:10px}
-.stat strong{display:block;font-size:26px;color:#1d4ed8;margin-top:8px}
-.plan{border:1px solid #cbd5e1;padding:16px;border-radius:9px;text-align:center}
-.small{font-size:13px;color:#64748b}
-table{width:100%;border-collapse:collapse;margin-top:12px}
-th,td{border:1px solid #e2e8f0;padding:10px;text-align:left;font-size:14px}
-th{background:#eff6ff}
-.table-wrap{overflow-x:auto}
-footer{text-align:center;padding:20px;color:#64748b}
-.user-card{border:1px solid #cbd5e1;padding:15px;border-radius:10px;margin:12px 0}
-.user-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-
-/* TRAFFIC CHARTS */
-.chart-box{
- background:#f8fafc;
- border:1px solid #e2e8f0;
- padding:16px;
- border-radius:10px;
- margin:12px 0;
-}
-.chart-row{
- display:grid;
- grid-template-columns:110px 1fr 45px;
- gap:10px;
- align-items:center;
- margin:15px 0;
- font-size:14px;
-}
-.chart-track{
- background:#e2e8f0;
- height:17px;
- border-radius:20px;
- overflow:hidden;
-}
-.chart-bar{
- height:100%;
- background:#2563eb;
- border-radius:20px;
- min-width:0;
- transition:width .4s;
-}
-.chart-value{
- font-weight:bold;
- text-align:right;
-}
-.chart-empty{
- color:#64748b;
- padding:12px;
- text-align:center;
-}
-
-@media(max-width:600px){
- .user-controls{grid-template-columns:1fr}
- nav button{padding:9px 7px;font-size:13px}
- .card{padding:15px}
- .chart-row{
-  grid-template-columns:85px 1fr 35px;
-  gap:6px;
-  font-size:12px;
- }
-}
-</style>
-</head>
-
-<body>
-
-<header>
-<h1>TRAFFIC BOT PRO</h1>
-<p>Worldwide Traffic Exchange Platform</p>
-</header>
-
-<nav>
-<button onclick="showSection('homeSection')">Home</button>
-<button onclick="showSection('accountSection')">Account</button>
-<button onclick="showDashboard()">Dashboard</button>
-<button id="navLogout" class="hidden" onclick="logout()">Logout</button>
-</nav>
-
-<div class="container">
-
-<section id="homeSection">
-<div class="card">
-<h2>Welcome to Traffic Bot Pro</h2>
-<p>Discover and share websites with real visitors from around the world.</p>
-<p>Submit your website for admin approval and explore approved websites.</p>
-<p class="small">Visits are voluntary. Visitors are not guaranteed. Do not use this platform to generate fake traffic, forced visits, or invalid advertising activity.</p>
-<button class="primary" onclick="showSection('accountSection')">Get Started</button>
-</div>
-</section>
-
-<section id="accountSection" class="hidden">
-
-<div class="card">
-<h2>Create Account</h2>
-<input id="regName" type="text" placeholder="Full Name">
-<input id="regEmail" type="email" placeholder="Email Address">
-<input id="regPassword" type="password" placeholder="Password (minimum 6 characters)">
-<button class="primary" onclick="register()">Register</button>
-<div id="registerMessage"></div>
-</div>
-
-<div class="card">
-<h2>Login</h2>
-<input id="loginEmail" type="email" placeholder="Email Address">
-<input id="loginPassword" type="password" placeholder="Password">
-<button class="primary" onclick="login()">Login</button>
-<div id="loginMessage"></div>
-</div>
-
-</section>
-
-<section id="dashboardSection" class="hidden">
-
-<div class="card">
-<h2>My Dashboard</h2>
-<p id="welcomeText">Welcome!</p>
-<div id="membershipInfo" class="message">Loading membership...</div>
-<button class="primary danger" onclick="logout()">Logout</button>
-<div id="dashboardMessage"></div>
-</div>
-
-<div class="card">
-<h2>Submit Your Website</h2>
-<input id="websiteName" type="text" placeholder="Website Name">
-<input id="websiteUrl" type="url" placeholder="https://example.com">
-<button class="primary" onclick="submitWebsite()">Submit Website</button>
-<p class="small">Only submit websites you own or have permission to promote. Admin approval is required.</p>
-<div id="submitMessage"></div>
-</div>
-
-<div class="card">
-<h2>My Submitted Websites</h2>
-<div id="myWebsites">Loading...</div>
-</div>
-
-<div class="card">
-<h2>Worldwide Visitor Exchange</h2>
-<p class="small">Choose a website and visit it voluntarily. Only one recorded visit per user per website is allowed every 24 hours. Your own website cannot be visited by you.</p>
-<div id="approvedWebsites">Loading...</div>
-</div>
-
-<div class="card">
-<h2>Membership Plans</h2>
-<div class="grid">
-
-<div class="plan">
-<h3>Free</h3>
-<h2>₹0</h2>
-<p>1 Website</p>
-<p>5 Visits Per Day</p>
-</div>
-
-<div class="plan">
-<h3>Basic</h3>
-<h2>₹99</h2>
-<p>7 Days</p>
-<p>3 Websites</p>
-<p>30 Visits Per Day</p>
-</div>
-
-<div class="plan">
-<h3>Premium</h3>
-<h2>₹299</h2>
-<p>30 Days</p>
-<p>10 Websites</p>
-<p>100 Visits Per Day</p>
-</div>
-
-<div class="plan">
-<h3>Premium Plus</h3>
-<h2>₹999</h2>
-<p>120 Days</p>
-<p>30 Websites</p>
-<p>300 Visits Per Day</p>
-</div>
-
-</div>
-<p class="small">Payment Gateway is not activated. These plans are currently display-only. Do not make any payment through this page.</p>
-</div>
-
-<div class="card">
-<h2>Advertisement Space</h2>
-<p>Advertisement space will be available when configured.</p>
-</div>
-
-<div class="card hidden" id="adminCard">
-<h2>Administrator</h2>
-<p>You have administrator access.</p>
-<button class="primary" onclick="openAdminPanel()">Open Admin Panel</button>
-</div>
-
-</section>
-
-<section id="adminSection" class="hidden">
-
-<div class="card">
-<h2>Admin Panel - Reports & Statistics</h2>
-<p class="small">Statistics loaded from your Supabase database.</p>
-<button class="primary" onclick="loadAdminReport()">Refresh Reports</button>
-<div id="reportMessage"></div>
-
-<div class="grid" style="margin-top:15px">
-<div class="stat">Total Users<strong id="reportTotalUsers">—</strong></div>
-<div class="stat">Total Websites<strong id="reportTotalWebsites">—</strong></div>
-<div class="stat">Approved Websites<strong id="reportApprovedWebsites">—</strong></div>
-<div class="stat">Pending Websites<strong id="reportPendingWebsites">—</strong></div>
-<div class="stat">Rejected Websites<strong id="reportRejectedWebsites">—</strong></div>
-<div class="stat">Recorded Visits<strong id="reportTotalVisits">—</strong></div>
-</div>
-</div>
-
-<!-- DAILY AND MONTHLY TRAFFIC REPORTS -->
-
-<div class="card">
-<h2>📈 Daily & Monthly Visitor Reports</h2>
-<p class="small">Visitor statistics are loaded from your Supabase website_visits table.</p>
-
-<button class="primary" onclick="loadTrafficPeriodReport()">Refresh Traffic Reports</button>
-
-<div id="trafficReportMessage"></div>
-
-<h3>Daily Visitor Statistics</h3>
-
-<div class="grid">
-<div class="stat">
-Today's Visitors
-<strong id="todayVisitors">—</strong>
-</div>
-
-<div class="stat">
-Yesterday's Visitors
-<strong id="yesterdayVisitors">—</strong>
-</div>
-
-<div class="stat">
-Last 7 Days Visitors
-<strong id="last7DaysVisitors">—</strong>
-</div>
-</div>
-
-<h3 style="margin-top:25px">Monthly Visitor Statistics</h3>
-
-<div class="grid">
-<div class="stat">
-This Month Visitors
-<strong id="thisMonthVisitors">—</strong>
-</div>
-
-<div class="stat">
-Last Month Visitors
-<strong id="lastMonthVisitors">—</strong>
-</div>
-</div>
-
-<h3 style="margin-top:25px">📊 Daily Traffic Chart</h3>
-
-<div class="chart-box">
-<div id="dailyTrafficChart">
-<div class="chart-empty">Loading daily chart...</div>
-</div>
-</div>
-
-<h3 style="margin-top:25px">📊 Monthly Traffic Chart</h3>
-
-<div class="chart-box">
-<div id="monthlyTrafficChart">
-<div class="chart-empty">Loading monthly chart...</div>
-</div>
-</div>
-
-<p class="small">Charts compare the available daily and monthly totals. All values represent recorded visits, not guaranteed unique human visitors.</p>
-</div>
-
-<div class="card">
-<h2>👥 Admin User Management</h2>
-<p class="small">Manage user membership and expiry date.</p>
-<button class="primary" onclick="loadAdminUsers()">Refresh User List</button>
-<div id="adminUsers">Press Refresh User List to load users.</div>
-</div>
-
-<div class="card">
-<h2>🌍 Country Reports</h2>
-<p class="small">Recorded visits grouped by detected country. Older visits may show Unknown.</p>
-<button class="primary" onclick="loadCountryReport()">Refresh Country Reports</button>
-<div id="countryReport">Loading...</div>
-</div>
-
-<div class="card">
-<h2>📊 Visitor History</h2>
-<p class="small">Latest recorded website visits.</p>
-<button class="primary" onclick="loadVisitHistory()">Refresh Visitor History</button>
-<div id="visitHistory">Loading...</div>
-</div>
-
-<div class="card">
-<h2>Admin Panel - Website Approval</h2>
-<div id="pendingWebsites">Loading...</div>
-</div>
-
-<div class="card">
-<button class="primary secondary" onclick="showDashboard()">Back to Dashboard</button>
-</div>
-
-</section>
-
-</div>
-
-<footer>Traffic Bot Pro © 2026</footer>
-
-<script>
-
-/* SUPABASE CONFIGURATION */
-
-const SUPABASE_URL = "https://tbqwecxhfsuzyqnewrns.supabase.co";
-const SUPABASE_KEY = "sb_publishable_IEj9oHtQYJMkdf8QBerxZQ_MU_6OVUn";
-
-const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-
-let currentUser = null;
-let currentProfile = null;
-
-function el(id){
- return document.getElementById(id);
-}
-
-function escapeHTML(value){
- return String(value ?? "").replace(/[&<>"']/g,function(c){
-  return {
-   "&":"&amp;",
-   "<":"&lt;",
-   ">":"&gt;",
-   '"':"&quot;",
-   "'":"&#39;"
-  }[c];
- });
-}
-
-function showMessage(id,message){
- el(id).innerHTML='<div class="message">'+escapeHTML(message)+'</div>';
-}
-
-function showSection(sectionId){
- [
-  "homeSection",
-  "accountSection",
-  "dashboardSection",
-  "adminSection"
- ].forEach(id=>el(id).classList.add("hidden"));
-
- el(sectionId).classList.remove("hidden");
-}
-
-/* PROFILE */
-
-async function getProfile(){
- if(!currentUser)return null;
-
- const {data,error}=await db
-  .from("profiles")
-  .select("*")
-  .eq("id",currentUser.id)
-  .maybeSingle();
-
- if(error){
-  console.error(error);
-  return null;
- }
-
- return data;
-}
-
-/* MEMBERSHIP EXPIRY */
-
-async function checkMembershipExpiry(){
- if(!currentUser)return null;
-
- const {data,error}=await db.rpc("check_my_membership_expiry");
-
- if(error){
-  console.error("Membership expiry check:",error);
-  return {success:false,error:error.message};
- }
-
- return data;
-}
-
-function displayMembership(){
- if(!currentProfile){
-  el("membershipInfo").textContent="Membership information unavailable.";
-  return;
- }
-
- const membership=currentProfile.membership||"Free";
- const expiry=currentProfile.membership_expires_at;
-
- let expiryText="No expiry date";
- let status="Active";
-
- if(expiry){
-  const date=new Date(expiry);
-  expiryText=Number.isNaN(date.getTime())?"Invalid date":date.toLocaleString();
-  status=date.getTime()<=Date.now()?"Expired":"Active";
- }
-
- el("membershipInfo").innerHTML=
-  "<strong>Membership:</strong> "+escapeHTML(membership)+
-  "<br><strong>Expiry:</strong> "+escapeHTML(expiryText)+
-  "<br><strong>Status:</strong> "+escapeHTML(status);
-}
-
-/* REGISTRATION */
-
-async function register(){
- const name=el("regName").value.trim();
- const email=el("regEmail").value.trim();
- const password=el("regPassword").value;
-
- if(!name||!email||!password){
-  showMessage("registerMessage","Please fill all fields.");
-  return;
- }
-
- if(password.length<6){
-  showMessage("registerMessage","Password must be at least 6 characters.");
-  return;
- }
-
- const {data,error}=await db.auth.signUp({
-  email:email,
-  password:password
- });
-
- if(error){
-  showMessage("registerMessage",error.message);
-  return;
- }
-
- if(data.user){
-  const {error:profileError}=await db
-   .from("profiles")
-   .upsert({
-    id:data.user.id,
-    full_name:name,
-    email:email
-   },{
-    onConflict:"id",
-    ignoreDuplicates:true
-   });
-
-  if(profileError)console.error(profileError);
- }
-
- showMessage(
-  "registerMessage",
-  "Registration submitted. Check your email if confirmation is required."
- );
-}
-
-/* LOGIN */
-
-async function login(){
- const email=el("loginEmail").value.trim();
- const password=el("loginPassword").value;
-
- if(!email||!password){
-  showMessage("loginMessage","Enter your email and password.");
-  return;
- }
-
- const {data,error}=await db.auth.signInWithPassword({
-  email:email,
-  password:password
- });
-
- if(error){
-  showMessage("loginMessage",error.message);
-  return;
- }
-
- currentUser=data.user;
- await loadDashboard();
-}
-
-/* LOGOUT */
-
-async function logout(){
- await db.auth.signOut();
-
- currentUser=null;
- currentProfile=null;
-
- el("navLogout").classList.add("hidden");
- el("adminCard").classList.add("hidden");
-
- showSection("homeSection");
-}
-
-/* DASHBOARD */
-
-async function showDashboard(){
- const {data}=await db.auth.getSession();
-
- if(!data.session){
-  showSection("accountSection");
-  return;
- }
-
- currentUser=data.session.user;
- await loadDashboard();
-}
-
-async function loadDashboard(){
- if(!currentUser){
-  showSection("accountSection");
-  return;
- }
-
- el("dashboardMessage").innerHTML="";
-
- const expiryResult=await checkMembershipExpiry();
-
- currentProfile=await getProfile();
-
- if(!currentProfile){
-  showMessage("dashboardMessage","Profile not found. Check your Supabase profile configuration.");
-  showSection("dashboardSection");
-  return;
- }
-
- el("welcomeText").textContent=
-  "Welcome, "+(currentProfile.full_name||currentUser.email);
-
- el("navLogout").classList.remove("hidden");
-
- if(currentProfile.is_admin===true){
-  el("adminCard").classList.remove("hidden");
- }else{
-  el("adminCard").classList.add("hidden");
- }
-
- displayMembership();
-
- if(expiryResult && expiryResult.success===false){
-  showMessage("dashboardMessage","Membership expiry check could not be completed. Please contact administrator.");
- }
-
- showSection("dashboardSection");
-
- await Promise.all([
-  loadMyWebsites(),
-  loadApproved()
- ]);
-}
-
-/* WEBSITE SUBMISSION */
-
-async function submitWebsite(){
-
- if(!currentUser){
-  showSection("accountSection");
-  return;
- }
-
- const name=el("websiteName").value.trim();
- const url=el("websiteUrl").value.trim();
-
- if(!name||!url){
-  showMessage("submitMessage","Enter website name and URL.");
-  return;
- }
-
- let parsedUrl;
-
- try{
-  parsedUrl=new URL(url);
- }catch(e){
-  showMessage("submitMessage","Please enter a valid website URL.");
-  return;
- }
-
- if(!["http:","https:"].includes(parsedUrl.protocol)){
-  showMessage("submitMessage","Only HTTP and HTTPS URLs are allowed.");
-  return;
- }
-
- const {data,error}=await db.rpc(
-  "submit_website",
-  {
-   p_name:name,
-   p_url:parsedUrl.href
-  }
- );
-
- if(error){
-  showMessage("submitMessage",error.message);
-  return;
- }
-
- if(!data||data.success!==true){
-  showMessage("submitMessage",data?.message||"Website submission failed.");
-  return;
- }
-
- el("websiteName").value="";
- el("websiteUrl").value="";
-
- showMessage(
-  "submitMessage",
-  data.message+
-  " Websites used: "+data.used+"/"+data.limit+
-  ". Remaining: "+data.remaining
- );
-
- await loadMyWebsites();
-}
-
-/* MY WEBSITES */
-
-async function loadMyWebsites(){
- const box=el("myWebsites");
-
- if(!currentUser){
-  box.textContent="Please login.";
-  return;
- }
-
- const {data,error}=await db
-  .from("websites")
-  .select("id,name,url,status,visits,created_at")
-  .eq("user_id",currentUser.id)
-  .order("created_at",{ascending:false});
-
- if(error){
-  box.textContent="Error: "+error.message;
-  return;
- }
-
- if(!data||data.length===0){
-  box.textContent="You have not submitted any websites yet.";
-  return;
- }
-
- box.innerHTML=data.map(site=>`
+`
   <div class="item">
    <h3>${escapeHTML(site.name)}</h3>
-   <a href="${escapeHTML(site.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(site.url)}</a>
-   <p>Status: <span class="badge">${escapeHTML(site.status)}</span></p>
-   <p>Recorded Visits: ${Number(site.visits||0)}</p>
+   <p><a href="${escapeHTML(site.url)}" target="_blank" rel="noopener noreferrer">${escapeHTML(site.url)}</a></p>
+   <p>User ID: ${escapeHTML(site.user_id)}</p>
+   <button class="primary success" onclick="updateWebsiteStatus('${site.id}','approved')">Approve</button>
+   <button class="primary danger" onclick="updateWebsiteStatus('${site.id}','rejected')">Reject</button>
   </div>
  `).join("");
 }
 
-/* APPROVED WEBSITES */
+async function updateWebsiteStatus(websiteId,status){
 
-async function loadApproved(){
- const box=el("approvedWebsites");
-
- if(!currentUser){
-  box.textContent="Please login.";
-  return;
- }
-
- const {data,error}=await db
-  .from("websites")
-  .select("id,name,url,visits,user_id")
-  .eq("status","approved")
-  .neq("user_id",currentUser.id)
-  .order("created_at",{ascending:false});
-
- if(error){
-  box.textContent="Error loading websites: "+error.message;
-  return;
- }
-
- if(!data||data.length===0){
-  box.textContent="No other approved websites available yet.";
-  return;
- }
-
- box.innerHTML=data.map(site=>`
-  <div class="item">
-   <h3>${escapeHTML(site.name)}</h3>
-   <p>Recorded Visits: ${Number(site.visits||0)}</p>
-   <button class="primary" onclick="visitWebsite('${site.id}')">Visit Website</button>
-  </div>
- `).join("");
-}
-
-/* COUNTRY DETECTION */
-
-async function detectCountry(){
- try{
-  const response=await fetch("https://ipapi.co/json/");
-
-  if(!response.ok)return "Unknown";
-
-  const info=await response.json();
-  return info.country_name||"Unknown";
-
- }catch(error){
-  console.log("Country detection unavailable:",error);
-  return "Unknown";
- }
-}
-
-/* VISIT WEBSITE */
-
-async function visitWebsite(websiteId){
-
- if(!currentUser){
-  showSection("accountSection");
-  return;
- }
-
- const visitTab=window.open("about:blank","_blank");
-
- const country=await detectCountry();
-
- const {data,error}=await db.rpc(
-  "record_website_visit",
-  {
-   p_website_id:websiteId,
-   p_country:country
-  }
- );
-
- if(error){
-  if(visitTab)visitTab.close();
-  alert("Visit error: "+error.message);
-  return;
- }
-
- if(!data||data.success!==true){
-  if(visitTab)visitTab.close();
-  alert(data?.message||"Visit could not be recorded.");
-  return;
- }
-
- const {data:site,error:siteError}=await db
-  .from("websites")
-  .select("url")
-  .eq("id",websiteId)
-  .eq("status","approved")
-  .maybeSingle();
-
- if(siteError||!site){
-  if(visitTab)visitTab.close();
-  alert("Website could not be opened.");
-  await loadApproved();
-  return;
- }
-
- if(visitTab){
-  visitTab.location.href=site.url;
- }else{
-  window.location.href=site.url;
- }
-
- await Promise.all([
-  loadApproved(),
-  loadMyWebsites()
- ]);
-}
-
-/* ADMIN PANEL */
-
-async function openAdminPanel(){
-
- if(!currentUser){
-  showSection("accountSection");
-  return;
- }
-
- currentProfile=await getProfile();
-
- if(!currentProfile||currentProfile.is_admin!==true){
+ if(!currentUser||!currentProfile||currentProfile.is_admin!==true){
   alert("Admin access denied.");
   return;
  }
 
- showSection("adminSection");
+ const {error}=await db
+  .from("websites")
+  .update({status:status})
+  .eq("id",websiteId);
+
+ if(error){
+  alert("Update failed: "+error.message);
+  return;
+ }
+
+ alert("Website status updated: "+status);
 
  await Promise.all([
   loadAdminWebsites(),
-  loadAdminReport(),
-  loadTrafficPeriodReport(),
-  loadAdminUsers(),
-  loadCountryReport(),
-  loadVisitHistory()
+  loadAdminReport()
  ]);
 }
 
-/* ADMIN WEBSITE APPROVAL */
+/* ADMIN REPORTS */
 
-async function loadAdminWebsites(){
+async function loadAdminReport(){
 
- const box=el("pendingWebsites");
+ if(!currentUser){
+  showMessage("reportMessage","Please login first.");
+  return;
+ }
 
- const {data,error}=await db
-  .from("websites")
-  .select("id,name,url,user_id,created_at")
-  .eq("status","pending")
-  .order("created_at",{ascending:false});
+ const {data,error}=await db.rpc("get_admin_report");
 
  if(error){
-  box.textContent="Error: "+error.message;
+  showMessage("reportMessage","Report error: "+error.message);
   return;
  }
 
- if(!data||data.length===0){
-  box.textContent="No pending websites.";
+ if(!data){
+  showMessage("reportMessage","No report data received.");
   return;
  }
 
- box.innerHTML=data.map(site=>`
+ el("reportTotalUsers").textContent=Number(data.total_users||0);
+ el("reportTotalWebsites").textContent=Number(data.total_websites||0);
+ el("reportApprovedWebsites").textContent=Number(data.approved_websites||0);
+ el("reportPendingWebsites").textContent=Number(data.pending_websites||0);
+ el("reportRejectedWebsites").textContent=Number(data.rejected_websites||0);
+ el("reportTotalVisits").textContent=Number(data.total_visits||0);
+
+ el("reportMessage").innerHTML=
+  '<div class="message">Reports updated successfully.</div>';
+}
+
+/* DAILY AND MONTHLY VISITOR REPORTS */
+
+function renderTrafficChart(elementId,items){
+
+ const box=el(elementId);
+
+ if(!items||items.length===0){
+  box.innerHTML='<div class="chart-empty">No traffic data available.</div>';
+  return;
+ }
+
+ const values=items.map(item=>Math.max(0,Number(item.value)||0));
+ const maxValue=Math.max(...values,1);
+
+ box.innerHTML=items.map(item=>{
+
+  const value=Math.max(0,Number(item.value)||0);
+  const width=(value/maxValue)*100;
+
+  return `
+   <div class="chart-row">
+    <div>${escapeHTML(item.label)}</div>
+    <div class="chart-track">
+     <div class="chart-bar" style="width:${width}%"></div>
+    </div>
+    <div class="chart-value">${value}</div>
+   </div>
+  `;
+
+ }).join("");
+}
+
+async function loadTrafficPeriodReport(){
+
+ if(!currentUser||!currentProfile||currentProfile.is_admin!==true){
+  el("trafficReportMessage").innerHTML=
+   '<div class="message">Admin access required.</div>';
+  return;
+ }
+
+ el("trafficReportMessage").innerHTML=
+  '<div class="message">Loading traffic reports...</div>';
+
+ const {data,error}=await db.rpc("get_traffic_period_report");
+
+ if(error){
+  el("trafficReportMessage").innerHTML=
+   '<div class="message">Traffic report error: '+
+   escapeHTML(error.message)+
+   '</div>';
+  return;
+ }
+
+ const report=Array.isArray(data)?data[0]:data;
+
+ if(!report){
+  el("trafficReportMessage").innerHTML=
+   '<div class="message">No traffic report data received.</div>';
+  return;
+ }
+
+ const today=Number(report.today_visits||0);
+ const yesterday=Number(report.yesterday_visits||0);
+ const last7=Number(report.last_7_days||0);
+ const thisMonth=Number(report.this_month||0);
+ const lastMonth=Number(report.last_month||0);
+
+ el("todayVisitors").textContent=today;
+ el("yesterdayVisitors").textContent=yesterday;
+ el("last7DaysVisitors").textContent=last7;
+ el("thisMonthVisitors").textContent=thisMonth;
+ el("lastMonthVisitors").textContent=lastMonth;
+
+ renderTrafficChart("dailyTrafficChart",[
+  {label:"Today",value:today},
+  {label:"Yesterday",value:yesterday},
+  {label:"Last 7 Days",value:last7}
+ ]);
+
+ renderTrafficChart("monthlyTrafficChart",[
+  {label:"This Month",value:thisMonth},
+  {label:"Last Month",value:lastMonth}
+ ]);
+
+ el("trafficReportMessage").innerHTML=
+  '<div class="message">Daily and monthly traffic reports updated successfully.</div>';
+}
+
+/* ADMIN USER MANAGEMENT */
+
+function formatExpiry(value){
+ if(!value)return "No expiry date";
+
+ const date=new Date(value);
+
+ if(Number.isNaN(date.getTime()))return "Invalid date";
+
+ return date.toLocaleString();
+}
+
+function toLocalDateTime(value){
+ if(!value)return "";
+
+ const date=new Date(value);
+
+ if(Number.isNaN(date.getTime()))return "";
+
+ const offset=date.getTimezoneOffset()*60000;
+
+ return new Date(date.getTime()-offset)
+  .toISOString()
+  .slice(0,16);
+}
+
+async function loadAdminUsers(){
+
+ const box=el("adminUsers");
+
+ if(!currentUser||!currentProfile||currentProfile.is_admin!==true){
+  box.textContent="Admin access required.";
+  return;
+ }
+
+ box.textContent="Loading users...";
+
+ const {data,error}=await db.rpc("get_admin_users");
+
+ if(error){
+  box.textContent="User list error: "+error.message;
+  return;
+ }
+
+ if(!Array.isArray(data)||data.length===0){
+  box.textContent="No users found.";
+  return;
+ }
+
+ box.innerHTML=data.map(user=>{
+
+  const membership=user.membership||"Free";
+  const expiry=user.membership_expires_at||"";
+  const expired=expiry&&new Date(expiry).getTime()<=Date.now();
+
+  return `
+   <div class="user-card">
+    <h3>${escapeHTML(user.full_name||"Unnamed User")}</h3>
+    <p>Email: ${escapeHTML(user.email||"Not available")}</p>
+    <p>Role: <span class="badge">${user.is_admin===true?"Administrator":"Normal User"}</span></p>
+    <p>Current Membership: <strong>${escapeHTML(membership)}</strong></p>
+    <p>Expiry: <strong>${escapeHTML(formatExpiry(expiry))}</strong></p>
+    <p>Status: <span class="badge">${expired?"Expired":(expiry?"Active":"No expiry set")}</span></p>
+
+    <div class="user-controls">
+     <div>
+      <label>Change Membership</label>
+      <select id="membership_${user.id}">
+       <option value="Free" ${membership==="Free"?"selected":""}>Free</option>
+       <option value="Basic" ${membership==="Basic"?"selected":""}>Basic</option>
+       <option value="Premium" ${membership==="Premium"?"selected":""}>Premium</option>
+       <option value="Premium Plus" ${membership==="Premium Plus"?"selected":""}>Premium Plus</option>
+      </select>
+     </div>
+
+     <div>
+      <label>Membership Expiry Date</label>
+      <input type="datetime-local" id="expiry_${user.id}" value="${escapeHTML(toLocalDateTime(expiry))}">
+     </div>
+    </div>
+
+    <button class="primary success" onclick="saveMembership('${user.id}')">Update Membership</button>
+   </div>
+  `;
+ }).join("");
+}
+
+async function saveMembership(userId){
+
+ if(!currentUser||!currentProfile||currentProfile.is_admin!==true){
+  alert("Admin access denied.");
+  return;
+ }
+
+ const membership=el("membership_"+userId).value;
+ const expiryValue=el("expiry_"+userId).value;
+
+ let expiresAt=null;
+
+ if(membership!=="Free"){
+
+  if(!expiryValue){
+   alert("Please select an expiry date for paid membership.");
+   return;
+  }
+
+  const date=new Date(expiryValue);
+
+  if(Number.isNaN(date.getTime())||date.getTime()<=Date.now()){
+   alert("Please select a valid future expiry date.");
+   return;
+  }
+
+  expiresAt=date.toISOString();
+ }
+
+ const {data,error}=await db.rpc(
+  "admin_update_membership",
+  {
+   p_user_id:userId,
+   p_membership:membership,
+   p_expires_at:expiresAt
+  }
+ );
+
+ if(error){
+  alert("Membership update failed: "+error.message);
+  return;
+ }
+
+ if(!data||data.success!==true){
+  alert(data?.message||"Membership update failed.");
+  return;
+ }
+
+ alert("Membership updated successfully.");
+ await loadAdminUsers();
+}
+
+/* COUNTRY REPORT */
+
+async function loadCountryReport(){
+
+ const box=el("countryReport");
+ box.textContent="Loading country reports...";
+
+ const {data,error}=await db.rpc("get_admin_country_report");
+
+ if(error){
+  box.textContent="Country report error: "+error.message;
+  return;
+ }
+
+ if(!Array.isArray(data)||data.length===0){
+  box.textContent="No country visit records available yet.";
+  return;
+ }
+
+ box.innerHTML=`
+  <div class="table-wrap">
+   <table>
+    <thead>
+     <tr><th>Country</th><th>Recorded Visits</th></tr>
+    </thead>
+    <tbody>
+     ${data.map(row=>`
+      <tr>
+       <td>${escapeHTML(row.country)}</td>
+       <td>${Number(row.total_visits||0)}</td>
+      </tr>
+     `).join("")}
+    </tbody>
+   </table>
+  </div>
+ `;
+}
+
+/* VISITOR HISTORY */
+
+async function loadVisitHistory(){
+
+ const box=el("visitHistory");
+ box.textContent="Loading visitor history...";
+
+ const {data,error}=await db.rpc("get_admin_visit_history");
+
+ if(error){
+  box.textContent="Visitor history error: "+error.message;
+  return;
+ }
+
+ if(!Array.isArray(data)||data.length===0){
+  box.textContent="No visitor history available yet.";
+  return;
+ }
+
+ box.innerHTML=`
+  <div class="table-wrap">
+   <table>
+    <thead>
+     <tr>
+      <th>Website</th>
+      <th>Country</th>
+      <th>Visitor ID</th>
+      <th>Visit Date & Time</th>
+     </tr>
+    </thead>
+    <tbody>
+     ${data.map(row=>`
+      <tr>
+       <td>${escapeHTML(row.website_name)}</td>
+       <td>${escapeHTML(row.country)}</td>
+       <td>${escapeHTML(row.visitor_id)}</td>
+       <td>${escapeHTML(new Date(row.visited_at).toLocaleString())}</td>
+      </tr>
+     `).join("")}
+    </tbody>
+   </table>
+  </div>
+ `;
+}
+
+/* SESSION CHECK */
+
+async function checkSession(){
+
+ const {data,error}=await db.auth.getSession();
+
+ if(error){
+  console.error(error);
+  return;
+ }
+
+ if(data.session){
+  currentUser=data.session.user;
+  await loadDashboard();
+ }else{
+  showSection("homeSection");
+ }
+}
+
+db.auth.onAuthStateChange((event,session)=>{
+
+ if(event==="SIGNED_OUT"){
+  currentUser=null;
+  currentProfile=null;
+
+  el("navLogout").classList.add("hidden");
+  el("adminCard").classList.add("hidden");
+
+  showSection("homeSection");
+ }
+});
+
+checkSession();
+
+</script>
+
+</body>
+</html>
