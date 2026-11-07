@@ -17,7 +17,7 @@ nav button{background:transparent;color:white;border:0;padding:10px 14px;cursor:
 nav button:hover{background:#334155}
 .container{max-width:1100px;margin:20px auto;padding:12px}
 .card{background:white;padding:20px;margin:15px 0;border-radius:12px;box-shadow:0 2px 10px #00000012}
-input{width:100%;padding:12px;margin:7px 0 14px;border:1px solid #cbd5e1;border-radius:7px;font-size:15px}
+input,select{width:100%;padding:12px;margin:7px 0 14px;border:1px solid #cbd5e1;border-radius:7px;font-size:15px}
 button.primary{background:#2563eb;color:white;border:0;padding:11px 17px;border-radius:7px;cursor:pointer;margin:3px}
 button.success{background:#16a34a}
 button.danger{background:#dc2626}
@@ -37,6 +37,14 @@ th,td{border:1px solid #e2e8f0;padding:10px;text-align:left;font-size:14px}
 th{background:#eff6ff}
 .table-wrap{overflow-x:auto}
 footer{text-align:center;padding:20px;color:#64748b}
+.user-card{border:1px solid #cbd5e1;padding:15px;border-radius:10px;margin:12px 0}
+.user-card h3{margin-top:0}
+.user-controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:600px){
+ .user-controls{grid-template-columns:1fr}
+ nav button{padding:9px 7px;font-size:13px}
+ .card{padding:15px}
+}
 </style>
 </head>
 
@@ -155,6 +163,14 @@ footer{text-align:center;padding:20px;color:#64748b}
 <div class="stat">Rejected Websites<strong id="reportRejectedWebsites">—</strong></div>
 <div class="stat">Recorded Visits<strong id="reportTotalVisits">—</strong></div>
 </div>
+</div>
+
+<!-- NEW USER MANAGEMENT -->
+<div class="card">
+<h2>👥 Admin User Management</h2>
+<p class="small">View registered users and manage their membership and expiry date.</p>
+<button class="primary" onclick="loadAdminUsers()">Refresh User List</button>
+<div id="adminUsers">Press Refresh User List to load users.</div>
 </div>
 
 <div class="card">
@@ -556,6 +572,7 @@ async function openAdminPanel(){
  await Promise.all([
   loadAdminWebsites(),
   loadAdminReport(),
+  loadAdminUsers(),
   loadCountryReport(),
   loadVisitHistory()
  ]);
@@ -643,6 +660,170 @@ async function loadAdminReport(){
  el("reportMessage").innerHTML='<div class="message">Reports updated successfully.</div>';
 }
 
+/* NEW: ADMIN USER LIST */
+
+function formatExpiry(value){
+ if(!value)return "No expiry date";
+
+ const date=new Date(value);
+
+ if(Number.isNaN(date.getTime()))return "Invalid date";
+
+ return date.toLocaleString();
+}
+
+function toLocalDateTime(value){
+ if(!value)return "";
+
+ const date=new Date(value);
+
+ if(Number.isNaN(date.getTime()))return "";
+
+ const offset=date.getTimezoneOffset()*60000;
+
+ return new Date(date.getTime()-offset)
+  .toISOString()
+  .slice(0,16);
+}
+
+async function loadAdminUsers(){
+ const box=el("adminUsers");
+
+ if(!currentUser||!currentProfile||currentProfile.is_admin!==true){
+  box.textContent="Admin access required.";
+  return;
+ }
+
+ box.textContent="Loading users...";
+
+ const {data,error}=await db.rpc("get_admin_users");
+
+ if(error){
+  box.textContent="User list error: "+error.message;
+  return;
+ }
+
+ if(!Array.isArray(data)||data.length===0){
+  box.textContent="No users found.";
+  return;
+ }
+
+ box.innerHTML=data.map(user=>{
+  const membership=user.membership||"Free";
+  const expiry=user.membership_expires_at||"";
+  const expired=expiry && new Date(expiry).getTime()<Date.now();
+
+  return `
+   <div class="user-card">
+    <h3>${escapeHTML(user.full_name||"Unnamed User")}</h3>
+    <p>Email: ${escapeHTML(user.email||"Not available")}</p>
+    <p>Role:
+     <span class="badge">
+      ${user.is_admin===true?"Administrator":"Normal User"}
+     </span>
+    </p>
+    <p>Current Membership:
+     <strong>${escapeHTML(membership)}</strong>
+    </p>
+    <p>Expiry:
+     <strong>${escapeHTML(formatExpiry(expiry))}</strong>
+    </p>
+    <p>
+     Status:
+     <span class="badge">
+      ${expired?"Expired":(expiry?"Active":"No expiry set")}
+     </span>
+    </p>
+
+    <div class="user-controls">
+     <div>
+      <label>Change Membership</label>
+      <select id="membership_${user.id}">
+       <option value="Free" ${membership==="Free"?"selected":""}>Free</option>
+       <option value="Basic" ${membership==="Basic"?"selected":""}>Basic</option>
+       <option value="Premium" ${membership==="Premium"?"selected":""}>Premium</option>
+      </select>
+     </div>
+
+     <div>
+      <label>Membership Expiry Date</label>
+      <input
+       type="datetime-local"
+       id="expiry_${user.id}"
+       value="${escapeHTML(toLocalDateTime(expiry))}"
+      >
+     </div>
+    </div>
+
+    <button
+     class="primary success"
+     onclick="saveMembership('${user.id}')"
+    >
+     Update Membership
+    </button>
+   </div>
+  `;
+ }).join("");
+}
+
+async function saveMembership(userId){
+ if(!currentUser||!currentProfile||currentProfile.is_admin!==true){
+  alert("Admin access denied.");
+  return;
+ }
+
+ const membership=el("membership_"+userId).value;
+ const expiryValue=el("expiry_"+userId).value;
+
+ let expiresAt=null;
+
+ if(membership!=="Free"){
+  if(!expiryValue){
+   alert("Please select an expiry date for Basic or Premium membership.");
+   return;
+  }
+
+  const date=new Date(expiryValue);
+
+  if(Number.isNaN(date.getTime())){
+   alert("Invalid expiry date.");
+   return;
+  }
+
+  if(date.getTime()<=Date.now()){
+   alert("Expiry date must be in the future.");
+   return;
+  }
+
+  expiresAt=date.toISOString();
+ }
+
+ const {data,error}=await db.rpc(
+  "admin_update_membership",
+  {
+   p_user_id:userId,
+   p_membership:membership,
+   p_expires_at:expiresAt
+  }
+ );
+
+ if(error){
+  alert("Membership update failed: "+error.message);
+  return;
+ }
+
+ if(!data||data.success!==true){
+  alert(data?.message||"Membership update failed.");
+  return;
+ }
+
+ alert("Membership updated successfully.");
+
+ await loadAdminUsers();
+}
+
+/* COUNTRY REPORT */
+
 async function loadCountryReport(){
  const box=el("countryReport");
  box.textContent="Loading country reports...";
@@ -677,6 +858,8 @@ async function loadCountryReport(){
   </div>
  `;
 }
+
+/* VISITOR HISTORY */
 
 async function loadVisitHistory(){
  const box=el("visitHistory");
