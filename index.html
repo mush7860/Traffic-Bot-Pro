@@ -759,15 +759,17 @@ async function openAdminPanel(){
  }
 
  showSection("adminSection");
-
- await Promise.all([
+ 
+await Promise.all([
   loadAdminWebsites(),
   loadAdminReport(),
   loadTrafficPeriodReport(),
   loadAdminUsers(),
   loadCountryReport(),
-  loadVisitHistory()
- ]);
+  loadVisitHistory(),
+  loadWebsiteTrafficReport()
+]);
+
 }
 
 /* ADMIN WEBSITE APPROVAL */
@@ -1248,9 +1250,7 @@ async function loadCountryReport(){
  `;
 }
 
-/* VISITOR HISTORY */
-
-async function loadVisitHistory(){ /* WEBSITE-WISE TRAFFIC REPORT */
+/* WEBSITE-WISE TRAFFIC REPORT */
 
 async function loadWebsiteTrafficReport(){
 
@@ -1275,20 +1275,17 @@ async function loadWebsiteTrafficReport(){
     );
 
     if(error){
-        console.error("Website traffic report error:",error);
-        message.textContent =
-            "Report error: " + error.message;
+        console.error(error);
+        message.textContent = "Report error: " + error.message;
         return;
     }
 
     if(!Array.isArray(data) || data.length === 0){
-        message.textContent =
-            "No website traffic records available.";
+        message.textContent = "No website traffic records available.";
         return;
     }
 
-    message.textContent =
-        "Website traffic report loaded successfully.";
+    message.textContent = "Website traffic report loaded successfully.";
 
     box.innerHTML = `
         <div class="table-wrap">
@@ -1307,34 +1304,22 @@ async function loadWebsiteTrafficReport(){
                     ${data.map(row => `
                         <tr>
                             <td>
-                                <strong>
-                                    ${escapeHTML(row.website_name)}
-                                </strong>
+                                <strong>${escapeHTML(row.website_name)}</strong>
                                 <br>
-                                <a
-                                    href="${escapeHTML(row.website_url)}"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
+                                <a href="${escapeHTML(row.website_url)}"
+                                   target="_blank"
+                                   rel="noopener noreferrer">
                                     Open Website
                                 </a>
                             </td>
 
-                            <td>
-                                ${escapeHTML(row.owner_name)}
-                            </td>
+                            <td>${escapeHTML(row.owner_name)}</td>
 
-                            <td>
-                                ${Number(row.total_visits || 0).toLocaleString("en-IN")}
-                            </td>
+                            <td>${Number(row.total_visits || 0).toLocaleString("en-IN")}</td>
 
-                            <td>
-                                ${Number(row.today_visits || 0).toLocaleString("en-IN")}
-                            </td>
+                            <td>${Number(row.today_visits || 0).toLocaleString("en-IN")}</td>
 
-                            <td>
-                                ${Number(row.last_7_days_visits || 0).toLocaleString("en-IN")}
-                            </td>
+                            <td>${Number(row.last_7_days_visits || 0).toLocaleString("en-IN")}</td>
                         </tr>
                     `).join("")}
                 </tbody>
@@ -1343,78 +1328,88 @@ async function loadWebsiteTrafficReport(){
     `;
 }
 
- const box=el("visitHistory");
- box.textContent="Loading visitor history...";
 
- const {data,error}=await db.rpc("get_admin_visit_history");
+/* VISITOR HISTORY */
 
- if(error){
-  box.textContent="Visitor history error: "+error.message;
-  return;
- }
+async function loadVisitHistory(){
 
- if(!Array.isArray(data)||data.length===0){
-  box.textContent="No visitor history available yet.";
-  return;
- }
+    const box = el("visitHistory");
 
- box.innerHTML=`
-  <div class="table-wrap">
-   <table>
-    <thead>
-     <tr>
-      <th>Website</th>
-      <th>Country</th>
-      <th>Visitor ID</th>
-      <th>Visit Date & Time</th>
-     </tr>
-    </thead>
-    <tbody>
-     ${data.map(row=>`
-      <tr>
-       <td>${escapeHTML(row.website_name)}</td>
-       <td>${escapeHTML(row.country)}</td>
-       <td>${escapeHTML(row.visitor_id)}</td>
-       <td>${escapeHTML(new Date(row.visited_at).toLocaleString())}</td>
-      </tr>
-     `).join("")}
-    </tbody>
-   </table>
-  </div>
- `;
+    box.textContent = "Loading visitor history...";
+
+    const {data,error} = await db.rpc(
+        "get_admin_visit_history"
+    );
+
+    if(error){
+        box.textContent = "Visitor history error: " + error.message;
+        return;
+    }
+
+    if(!Array.isArray(data) || data.length === 0){
+        box.textContent = "No visitor history available yet.";
+        return;
+    }
+
+    box.innerHTML = `
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Website</th>
+                        <th>Country</th>
+                        <th>Visitor ID</th>
+                        <th>Visit Date & Time</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    ${data.map(row => `
+                        <tr>
+                            <td>${escapeHTML(row.website_name)}</td>
+                            <td>${escapeHTML(row.country)}</td>
+                            <td>${escapeHTML(row.visitor_id)}</td>
+                            <td>${escapeHTML(new Date(row.visited_at).toLocaleString())}</td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
 }
+
 
 /* SESSION CHECK */
 
 async function checkSession(){
 
- const {data,error}=await db.auth.getSession();
+    const {data,error} = await db.auth.getSession();
 
- if(error){
-  console.error(error);
-  return;
- }
+    if(error){
+        console.error(error);
+        return;
+    }
 
- if(data.session){
-  currentUser=data.session.user;
-  await loadDashboard();
- }else{
-  showSection("homeSection");
- }
+    if(data.session){
+        currentUser = data.session.user;
+        await loadDashboard();
+    }else{
+        showSection("homeSection");
+    }
 }
 
 db.auth.onAuthStateChange((event,session)=>{
 
- if(event==="SIGNED_OUT"){
+    if(event === "SIGNED_OUT"){
 
-  currentUser=null;
-  currentProfile=null;
+        currentUser = null;
+        currentProfile = null;
 
-  el("navLogout").classList.add("hidden");
-  el("adminCard").classList.add("hidden");
+        el("navLogout").classList.add("hidden");
+        el("adminCard").classList.add("hidden");
 
-  showSection("homeSection");
- }
+        showSection("homeSection");
+    }
 });
 
 checkSession();
