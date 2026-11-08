@@ -289,9 +289,9 @@ footer{text-align:center;padding:20px;color:#64748b}
 <div id="countryReport">Loading...</div>
 </div>
 
-<div class="card">
 <!-- WEBSITE-WISE TRAFFIC REPORT -->
 <div class="card">
+
     <h2>🌐 Website-wise Traffic Report</h2>
 
     <p class="small">
@@ -308,20 +308,43 @@ footer{text-align:center;padding:20px;color:#64748b}
     </div>
 
     <div id="websiteTrafficReport"></div>
-</div>
-<h2>📊 Visitor History</h2>
-<p class="small">Latest recorded website visits.</p>
-<button class="primary" onclick="loadVisitHistory()">Refresh Visitor History</button>
-<div id="visitHistory">Loading...</div>
+
 </div>
 
+
+<!-- VISITOR HISTORY -->
 <div class="card">
-<h2>Admin Panel - Website Approval</h2>
-<div id="pendingWebsites">Loading...</div>
+
+    <h2>📊 Visitor History</h2>
+
+    <p class="small">Latest recorded website visits.</p>
+
+    <button class="primary" onclick="loadVisitHistory()">
+        Refresh Visitor History
+    </button>
+
+    <div id="visitHistory">Loading...</div>
+
 </div>
 
+
+<!-- WEBSITE APPROVAL -->
 <div class="card">
-<button class="primary secondary" onclick="showDashboard()">Back to Dashboard</button>
+
+    <h2>Admin Panel - Website Approval</h2>
+
+    <div id="pendingWebsites">Loading...</div>
+
+</div>
+
+
+<!-- BACK TO DASHBOARD -->
+<div class="card">
+
+    <button class="primary secondary" onclick="showDashboard()">
+        Back to Dashboard
+    </button>
+
 </div>
 
 </section>
@@ -331,83 +354,6 @@ footer{text-align:center;padding:20px;color:#64748b}
 <footer>Traffic Bot Pro © 2026</footer>
 
 <script>
-
-/* SUPABASE CONFIGURATION */
-
-const SUPABASE_URL = "https://tbqwecxhfsuzyqnewrns.supabase.co";
-const SUPABASE_KEY = "sb_publishable_IEj9oHtQYJMkdf8QBerxZQ_MU_6OVUn";
-
-const db = window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-
-let currentUser = null;
-let currentProfile = null;
-
-function el(id){
- return document.getElementById(id);
-}
-
-function escapeHTML(value){
- return String(value ?? "").replace(/[&<>"']/g,function(c){
-  return {
-   "&":"&amp;",
-   "<":"&lt;",
-   ">":"&gt;",
-   '"':"&quot;",
-   "'":"&#39;"
-  }[c];
- });
-}
-
-function showMessage(id,message){
- el(id).innerHTML='<div class="message">'+escapeHTML(message)+'</div>';
-}
-
-function showSection(sectionId){
- [
-  "homeSection",
-  "accountSection",
-  "dashboardSection",
-  "adminSection"
- ].forEach(id=>el(id).classList.add("hidden"));
-
- el(sectionId).classList.remove("hidden");
-}
-
-/* PROFILE */
-
-async function getProfile(){
-
- if(!currentUser)return null;
-
- const {data,error}=await db
-  .from("profiles")
-  .select("*")
-  .eq("id",currentUser.id)
-  .maybeSingle();
-
- if(error){
-  console.error(error);
-  return null;
- }
-
- return data;
-}
-
-/* MEMBERSHIP EXPIRY */
-
-async function checkMembershipExpiry(){
-
- if(!currentUser)return null;
-
- const {data,error}=await db.rpc("check_my_membership_expiry");
-
- if(error){
-  console.error("Membership expiry check:",error);
-  return {success:false,error:error.message};
- }
-
- return data;
-}
 
 function displayMembership(){
 
