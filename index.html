@@ -254,7 +254,25 @@ footer{text-align:center;padding:20px;color:#64748b}
 <div id="monthlyTrafficChart">Loading chart...</div>
 </div>
 
-<p class="small">Note: These charts compare total visit counts for the selected periods. They are not individual day-by-day historical charts.</p>
+<!-- HISTORICAL DAILY TRAFFIC CHART -->
+<div class="chart-card">
+  <h3>📈 Historical Daily Traffic</h3>
+  <p class="small">Date-wise recorded website visits.</p>
+
+  <button class="primary" onclick="loadHistoricalDailyTraffic(7)">
+    Last 7 Days
+  </button>
+
+  <button class="primary success" onclick="loadHistoricalDailyTraffic(30)">
+    Last 30 Days
+  </button>
+
+  <div id="historicalTrafficMessage" class="message">
+    Select a traffic period.
+  </div>
+
+  <div id="historicalTrafficChart"></div>
+</div>
 </div>
 
 <div class="card">
@@ -978,7 +996,72 @@ async function loadTrafficPeriodReport(){
 
  message.innerHTML='<div class="message">Daily and monthly traffic reports updated successfully.</div>';
 }
+/* HISTORICAL DAY-BY-DAY TRAFFIC REPORT */
 
+async function loadHistoricalDailyTraffic(days){
+
+ const message = el("historicalTrafficMessage");
+ const chart = el("historicalTrafficChart");
+
+ if(!currentUser){
+  message.textContent = "Please login first.";
+  return;
+ }
+
+ if(!currentProfile || currentProfile.is_admin !== true){
+  message.textContent = "Admin access required.";
+  return;
+ }
+
+ if(days !== 7 && days !== 30){
+  message.textContent = "Only 7 or 30 days are supported.";
+  return;
+ }
+
+ message.textContent = "Loading " + days + "-day traffic report...";
+ chart.innerHTML = "";
+
+ const {data,error} = await db.rpc(
+  "get_admin_daily_traffic",
+  {
+   p_days: days
+  }
+ );
+
+ if(error){
+  console.error("Historical traffic error:",error);
+  message.textContent = "Traffic report error: " + error.message;
+  return;
+ }
+
+ if(!Array.isArray(data) || data.length === 0){
+  message.textContent = "No traffic data available.";
+  return;
+ }
+
+ const items = data.map(row => {
+
+  const date = new Date(row.traffic_date + "T00:00:00");
+
+  return {
+   label: date.toLocaleDateString("en-IN",{
+    day:"2-digit",
+    month:"short"
+   }),
+   value: Number(row.total_visits || 0)
+  };
+
+ });
+
+ renderTrafficChart(
+  "historicalTrafficChart",
+  items,
+  "daily"
+ );
+
+ message.textContent =
+  "Successfully loaded " + days + " days of traffic.";
+    }
 /* ADMIN USER MANAGEMENT */
 
 function formatExpiry(value){
