@@ -290,6 +290,25 @@ footer{text-align:center;padding:20px;color:#64748b}
 </div>
 
 <div class="card">
+<!-- WEBSITE-WISE TRAFFIC REPORT -->
+<div class="card">
+    <h2>🌐 Website-wise Traffic Report</h2>
+
+    <p class="small">
+        Website-wise recorded visits, owner details, today's visits,
+        and last 7 days' visits.
+    </p>
+
+    <button class="primary" onclick="loadWebsiteTrafficReport()">
+        Refresh Website Traffic
+    </button>
+
+    <div id="websiteTrafficMessage" class="message">
+        Press Refresh Website Traffic to load the report.
+    </div>
+
+    <div id="websiteTrafficReport"></div>
+</div>
 <h2>📊 Visitor History</h2>
 <p class="small">Latest recorded website visits.</p>
 <button class="primary" onclick="loadVisitHistory()">Refresh Visitor History</button>
@@ -1285,7 +1304,98 @@ async function loadCountryReport(){
 
 /* VISITOR HISTORY */
 
-async function loadVisitHistory(){
+async function loadVisitHistory(){ /* WEBSITE-WISE TRAFFIC REPORT */
+
+async function loadWebsiteTrafficReport(){
+
+    const box = el("websiteTrafficReport");
+    const message = el("websiteTrafficMessage");
+
+    if(!currentUser){
+        message.textContent = "Please login first.";
+        return;
+    }
+
+    if(!currentProfile || currentProfile.is_admin !== true){
+        message.textContent = "Admin access required.";
+        return;
+    }
+
+    message.textContent = "Loading website traffic report...";
+    box.innerHTML = "";
+
+    const {data,error} = await db.rpc(
+        "get_admin_website_traffic"
+    );
+
+    if(error){
+        console.error("Website traffic report error:",error);
+        message.textContent =
+            "Report error: " + error.message;
+        return;
+    }
+
+    if(!Array.isArray(data) || data.length === 0){
+        message.textContent =
+            "No website traffic records available.";
+        return;
+    }
+
+    message.textContent =
+        "Website traffic report loaded successfully.";
+
+    box.innerHTML = `
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Website</th>
+                        <th>Owner</th>
+                        <th>Total Visits</th>
+                        <th>Today</th>
+                        <th>Last 7 Days</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    ${data.map(row => `
+                        <tr>
+                            <td>
+                                <strong>
+                                    ${escapeHTML(row.website_name)}
+                                </strong>
+                                <br>
+                                <a
+                                    href="${escapeHTML(row.website_url)}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    Open Website
+                                </a>
+                            </td>
+
+                            <td>
+                                ${escapeHTML(row.owner_name)}
+                            </td>
+
+                            <td>
+                                ${Number(row.total_visits || 0).toLocaleString("en-IN")}
+                            </td>
+
+                            <td>
+                                ${Number(row.today_visits || 0).toLocaleString("en-IN")}
+                            </td>
+
+                            <td>
+                                ${Number(row.last_7_days_visits || 0).toLocaleString("en-IN")}
+                            </td>
+                        </tr>
+                    `).join("")}
+                </tbody>
+            </table>
+        </div>
+    `;
+}
 
  const box=el("visitHistory");
  box.textContent="Loading visitor history...";
