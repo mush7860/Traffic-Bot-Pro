@@ -354,7 +354,126 @@ footer{text-align:center;padding:20px;color:#64748b}
 <footer>Traffic Bot Pro © 2026</footer>
 
 <script>
+ 
+/* SUPABASE CONFIGURATION */
 
+const SUPABASE_URL = "https://tbqwecxhfsuzyqnewrns.supabase.co";
+
+const SUPABASE_KEY = "sb_publishable_IEj9oHtQYJMkdf8QBerxZQ_MU_6OVUn";
+
+const db = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_KEY
+);
+
+
+/* GLOBAL VARIABLES */
+
+let currentUser = null;
+let currentProfile = null;
+
+
+/* COMMON FUNCTIONS */
+
+function el(id){
+    return document.getElementById(id);
+}
+
+
+function showSection(sectionId){
+
+    const sections = [
+        "homeSection",
+        "accountSection",
+        "dashboardSection",
+        "adminSection"
+    ];
+
+    sections.forEach(id => {
+        const section = el(id);
+
+        if(section){
+            section.classList.add("hidden");
+        }
+    });
+
+    const selectedSection = el(sectionId);
+
+    if(selectedSection){
+        selectedSection.classList.remove("hidden");
+    }
+
+    window.scrollTo(0,0);
+}
+
+
+function escapeHTML(value){
+
+    return String(value ?? "").replace(/[&<>"']/g, character => ({
+        "&":"&amp;",
+        "<":"&lt;",
+        ">":"&gt;",
+        '"':"&quot;",
+        "'":"&#039;"
+    })[character]);
+}
+
+
+function showMessage(elementId,message){
+
+    const box = el(elementId);
+
+    if(box){
+        box.innerHTML =
+            '<div class="message">' +
+            escapeHTML(message) +
+            '</div>';
+    }
+}
+
+
+/* GET USER PROFILE */
+
+async function getProfile(){
+
+    if(!currentUser){
+        return null;
+    }
+
+    const {data,error} = await db
+        .from("profiles")
+        .select("*")
+        .eq("id",currentUser.id)
+        .maybeSingle();
+
+    if(error){
+        console.error("Profile error:",error);
+        return null;
+    }
+
+    return data;
+}
+
+
+/* CHECK MEMBERSHIP EXPIRY */
+
+async function checkMembershipExpiry(){
+
+    if(!currentUser){
+        return null;
+    }
+
+    const {data,error} = await db.rpc(
+        "check_my_membership_expiry"
+    );
+
+    if(error){
+        console.error("Membership expiry error:",error);
+        return {success:false};
+    }
+
+    return data;
+}
 function displayMembership(){
 
  if(!currentProfile){
