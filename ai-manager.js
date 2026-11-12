@@ -1,4 +1,4 @@
-/* TRAFFIC BOT PRO - AI MANAGER */
+/* TRAFFIC BOT PRO - FREE SMART TRAFFIC ANALYSIS */
 
 (function () {
   "use strict";
@@ -13,180 +13,178 @@
     card.id = "aiManagerCard";
 
     card.innerHTML = `
-      <h2>🤖 Traffic Bot Pro - AI Manager</h2>
+      <h2>🤖 Free Smart Traffic Manager</h2>
 
       <p class="small">
-        Admin-only AI traffic analysis and recommendations.
+        Automatic traffic analysis. No API, no token, no payment.
       </p>
 
       <div class="report-grid">
         <div class="report-stat">
-          <span>Today's Visitors</span>
-          <strong id="aiToday">—</strong>
+          <span>Total Users</span>
+          <strong id="freeAIUsers">0</strong>
+        </div>
+
+        <div class="report-stat">
+          <span>Total Websites</span>
+          <strong id="freeAIWebsites">0</strong>
+        </div>
+
+        <div class="report-stat">
+          <span>Total Visits</span>
+          <strong id="freeAIVisits">0</strong>
         </div>
 
         <div class="report-stat">
           <span>Last 7 Days</span>
-          <strong id="aiWeek">—</strong>
-        </div>
-
-        <div class="report-stat">
-          <span>This Month</span>
-          <strong id="aiMonth">—</strong>
+          <strong id="freeAIWeek">0</strong>
         </div>
       </div>
 
-      <label><strong>Ask AI Manager</strong></label>
+      <h3>📊 Automatic Traffic Analysis</h3>
 
-      <textarea
-        id="aiQuestion"
-        rows="4"
-        maxlength="6000"
-        placeholder="Example: Analyze my website traffic and suggest improvements."
-        style="width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:8px;margin:10px 0;"
-      ></textarea>
-
-      <button class="primary" id="aiAnalyzeButton">
-        🤖 Analyze Traffic
+      <button class="primary" id="freeAIAnalyze">
+        Analyze My Traffic
       </button>
 
-      <button class="primary success" id="aiQuickReport">
-        📊 Generate Traffic Report
+      <button class="primary success" id="freeAIRefresh">
+        Refresh Analysis
       </button>
 
-      <div id="aiStatus" class="message" style="margin-top:15px;">
-        AI Manager ready. Enter your question.
+      <div id="freeAIStatus" class="message" style="margin-top:15px;">
+        Free Traffic Manager Ready.
       </div>
 
       <div class="chart-card">
-        <h3>AI Analysis Result</h3>
-        <div id="aiAnswer" style="white-space:pre-wrap;overflow-wrap:anywhere;">
-          Your AI report will appear here.
+        <h3>📈 Traffic Performance</h3>
+        <div id="freeAIResult"
+          style="white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;">
+          Click Analyze My Traffic to generate your report.
         </div>
       </div>
     `;
 
     admin.appendChild(card);
 
-    document.getElementById("aiAnalyzeButton")
-      .addEventListener("click", function () {
-        runAIAnalysis(false);
-      });
+    document.getElementById("freeAIAnalyze")
+      .addEventListener("click", analyzeTraffic);
 
-    document.getElementById("aiQuickReport")
-      .addEventListener("click", function () {
-        document.getElementById("aiQuestion").value =
-          "Analyze my current website traffic reports. Explain daily, monthly, country-wise and website-wise performance. Identify suspicious patterns and give practical improvement suggestions.";
-
-        runAIAnalysis(true);
-      });
+    document.getElementById("freeAIRefresh")
+      .addEventListener("click", analyzeTraffic);
   }
 
-  function getTrafficContext() {
-    const ids = [
-      "reportTotalUsers",
-      "reportTotalWebsites",
-      "reportApprovedWebsites",
-      "reportPendingWebsites",
-      "reportRejectedWebsites",
-      "reportTotalVisits",
-      "todayVisitors",
-      "yesterdayVisitors",
-      "last7DaysVisitors",
-      "thisMonthVisitors",
-      "lastMonthVisitors",
-      "countryReport",
-      "websiteTrafficReport",
-      "visitHistory",
-      "historicalTrafficChart"
-    ];
+  function getNumber(id) {
+    const element = document.getElementById(id);
 
-    const context = {};
+    if (!element) return 0;
 
-    ids.forEach(function (id) {
-      const element = document.getElementById(id);
+    const match = element.innerText.match(/[\d,]+/);
 
-      if (element) {
-        context[id] = element.innerText.slice(0, 2500);
-      }
-    });
-
-    return context;
+    return match ? Number(match[0].replace(/,/g, "")) : 0;
   }
 
-  async function runAIAnalysis(quickReport) {
-    const question = document.getElementById("aiQuestion").value.trim();
-    const status = document.getElementById("aiStatus");
-    const answer = document.getElementById("aiAnswer");
-    const button = document.getElementById("aiAnalyzeButton");
+  function analyzeTraffic() {
+    const status = document.getElementById("freeAIStatus");
+    const result = document.getElementById("freeAIResult");
 
-    if (!question) {
-      status.textContent = "Please enter your question.";
-      return;
+    status.textContent = "Analyzing your traffic reports...";
+
+    const users = getNumber("reportTotalUsers");
+    const websites = getNumber("reportTotalWebsites");
+    const approved = getNumber("reportApprovedWebsites");
+    const pending = getNumber("reportPendingWebsites");
+    const visits = getNumber("reportTotalVisits");
+
+    const today = getNumber("todayVisitors");
+    const yesterday = getNumber("yesterdayVisitors");
+    const week = getNumber("last7DaysVisitors");
+    const month = getNumber("thisMonthVisitors");
+    const lastMonth = getNumber("lastMonthVisitors");
+
+    document.getElementById("freeAIUsers").textContent = users;
+    document.getElementById("freeAIWebsites").textContent = websites;
+    document.getElementById("freeAIVisits").textContent = visits;
+    document.getElementById("freeAIWeek").textContent = week;
+
+    let report = "";
+
+    report += "TRAFFIC BOT PRO - SMART REPORT\n";
+    report += "================================\n\n";
+
+    report += "1. PLATFORM OVERVIEW\n";
+    report += "Total Users: " + users + "\n";
+    report += "Total Websites: " + websites + "\n";
+    report += "Approved Websites: " + approved + "\n";
+    report += "Pending Websites: " + pending + "\n";
+    report += "Recorded Visits: " + visits + "\n\n";
+
+    report += "2. DAILY TRAFFIC\n";
+    report += "Today's Visitors: " + today + "\n";
+    report += "Yesterday's Visitors: " + yesterday + "\n";
+    report += "Last 7 Days: " + week + "\n\n";
+
+    report += "3. MONTHLY TRAFFIC\n";
+    report += "This Month: " + month + "\n";
+    report += "Last Month: " + lastMonth + "\n\n";
+
+    report += "4. AUTOMATIC ANALYSIS\n";
+
+    if (visits === 0) {
+      report += "No recorded visits found yet. Start recording website visits.\n";
+    } else {
+      report += "Your platform has recorded " + visits + " visits.\n";
     }
 
-    if (
-      typeof currentUser === "undefined" ||
-      !currentUser
-    ) {
-      status.textContent = "Please login first.";
-      return;
+    if (today > yesterday) {
+      report += "Daily traffic is higher than yesterday.\n";
+    } else if (today < yesterday) {
+      report += "Daily traffic is lower than yesterday.\n";
+    } else {
+      report += "Today's traffic is equal to yesterday's traffic.\n";
     }
 
-    if (
-      typeof currentProfile === "undefined" ||
-      !currentProfile ||
-      currentProfile.is_admin !== true
-    ) {
-      status.textContent = "Admin access required.";
-      return;
+    if (week > 0) {
+      report += "Your platform received visitors during the last 7 days.\n";
+    } else {
+      report += "No visits recorded in the last 7 days.\n";
     }
 
-    button.disabled = true;
-    status.textContent = "AI is analyzing your reports...";
-    answer.textContent = "Please wait...";
-
-    try {
-      const { data, error } = await db.functions.invoke(
-        "traffic-ai-manager-v2",
-        {
-          body: {
-            message: question,
-            context: getTrafficContext()
-          }
-        }
-      );
-
-      if (error) {
-        let details = error.message || "AI request failed.";
-
-        try {
-          if (error.context) {
-            const response = await error.context.json();
-            details = response.error || details;
-
-            if (response.details) {
-              details += "\n" + response.details;
-            }
-          }
-        } catch (_) {}
-
-        throw new Error(details);
-      }
-
-      if (!data || data.success !== true || !data.answer) {
-        throw new Error(data?.error || "No AI response received.");
-      }
-
-      answer.textContent = data.answer;
-      status.textContent = "AI analysis completed successfully.";
-
-    } catch (error) {
-      answer.textContent = "AI analysis could not be completed.";
-      status.textContent = "Error: " + error.message;
-    } finally {
-      button.disabled = false;
+    if (month > lastMonth) {
+      report += "Monthly traffic is higher than last month.\n";
+    } else if (month < lastMonth) {
+      report += "Monthly traffic is lower than last month.\n";
+    } else {
+      report += "Monthly traffic is equal to last month.\n";
     }
+
+    report += "\n5. WEBSITE MANAGEMENT\n";
+
+    if (pending > 0) {
+      report += pending + " website(s) are waiting for approval.\n";
+    } else {
+      report += "No pending website approvals.\n";
+    }
+
+    if (websites > approved) {
+      report += "Some websites are not approved yet. Check website status.\n";
+    } else {
+      report += "All registered websites are approved.\n";
+    }
+
+    report += "\n6. SMART RECOMMENDATIONS\n";
+    report += "1. Invite more genuine website owners to join.\n";
+    report += "2. Encourage members to share their approved websites.\n";
+    report += "3. Monitor daily and weekly traffic regularly.\n";
+    report += "4. Check country-wise and website-wise reports.\n";
+    report += "5. Investigate unusual visitor patterns manually.\n";
+    report += "6. Keep website approval and membership records updated.\n";
+
+    report += "\n================================\n";
+    report += "Report generated locally. No paid AI API used.";
+
+    result.textContent = report;
+    status.textContent = "Traffic analysis completed successfully.";
+
   }
 
   if (document.readyState === "loading") {
