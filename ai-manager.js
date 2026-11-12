@@ -1,7 +1,9 @@
-/* TRAFFIC BOT PRO - ADVANCED FREE SMART MANAGER */
+/* TRAFFIC BOT PRO - ADVANCED FREE SMART MANAGER + CHAT */
 
 (function () {
   "use strict";
+
+  let latestData = null;
 
   function createAIManager() {
     const admin = document.getElementById("adminSection");
@@ -16,7 +18,7 @@
       <h2>🤖 Advanced Free Smart Traffic Manager</h2>
 
       <p class="small">
-        100% Free Traffic Analysis - No API, No Token, No Payment.
+        Free Smart Analysis & Chat - No API, No Token, No Payment.
       </p>
 
       <div class="report-grid">
@@ -24,17 +26,14 @@
           <span>Total Users</span>
           <strong id="freeAIUsers">0</strong>
         </div>
-
         <div class="report-stat">
           <span>Total Websites</span>
           <strong id="freeAIWebsites">0</strong>
         </div>
-
         <div class="report-stat">
           <span>Total Visits</span>
           <strong id="freeAIVisits">0</strong>
         </div>
-
         <div class="report-stat">
           <span>Last 7 Days</span>
           <strong id="freeAIWeek">0</strong>
@@ -52,7 +51,7 @@
       </button>
 
       <div id="freeAIStatus" class="message" style="margin-top:15px;">
-        Advanced Smart Manager Ready.
+        Smart Manager Ready.
       </div>
 
       <div class="chart-card">
@@ -86,6 +85,34 @@
       </div>
 
       <div class="chart-card">
+        <h3>💬 Traffic Assistant Chat</h3>
+        <p class="small">
+          Ask questions about your platform traffic and reports.
+        </p>
+
+        <div id="freeAIChatMessages"
+          style="min-height:100px;max-height:300px;overflow-y:auto;
+          padding:10px;border:1px solid #ccc;border-radius:8px;
+          margin-bottom:12px;">
+          <p><strong>Assistant:</strong> Hello! Analyze your traffic and ask me questions.</p>
+        </div>
+
+        <textarea id="freeAIChatInput"
+          placeholder="Ask something... Example: Which website has highest traffic?"
+          rows="3"
+          style="width:100%;box-sizing:border-box;padding:12px;
+          border-radius:8px;margin-bottom:10px;"></textarea>
+
+        <button class="primary" id="freeAIChatSend">
+          ➤ Send Message
+        </button>
+
+        <button class="primary success" id="freeAIChatClear">
+          Clear Chat
+        </button>
+      </div>
+
+      <div class="chart-card">
         <h3>📋 Complete Traffic Report</h3>
         <div id="freeAIResult"
           style="white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;">
@@ -101,6 +128,20 @@
 
     document.getElementById("freeAIRefresh")
       .addEventListener("click", analyzeTraffic);
+
+    document.getElementById("freeAIChatSend")
+      .addEventListener("click", sendChatMessage);
+
+    document.getElementById("freeAIChatClear")
+      .addEventListener("click", clearChat);
+
+    document.getElementById("freeAIChatInput")
+      .addEventListener("keydown", function (event) {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          sendChatMessage();
+        }
+      });
   }
 
   function getElementText(id) {
@@ -119,7 +160,6 @@
 
   function getTableRows(id) {
     const element = document.getElementById(id);
-
     if (!element) return [];
 
     return Array.from(element.querySelectorAll("tr"))
@@ -130,9 +170,96 @@
       .filter(row => row.length >= 2);
   }
 
+  /* Read website data from table or card-style HTML */
+
+  function getWebsiteRows() {
+    const tableRows = getTableRows("websiteTrafficReport");
+
+    if (tableRows.length > 1) {
+      return tableRows;
+    }
+
+    const container = document.getElementById("websiteTrafficReport");
+    if (!container) return [];
+
+    const anchors = Array.from(container.querySelectorAll("a"));
+    const results = [];
+
+    anchors.forEach(anchor => {
+      let node = anchor.parentElement;
+      let candidate = null;
+
+      while (node && node !== container.parentElement) {
+        const text = node.innerText || "";
+        const lines = text.split(/\n+/)
+          .map(line => line.trim())
+          .filter(Boolean);
+
+        const numericLines = lines.filter(line =>
+          /^\d[\d,]*$/.test(line)
+        );
+
+        if (
+          lines.length >= 4 &&
+          numericLines.length >= 3 &&
+          node.closest("#websiteTrafficReport")
+        ) {
+          candidate = { node, lines };
+          break;
+        }
+
+        if (node === container) break;
+        node = node.parentElement;
+      }
+
+      if (!candidate) return;
+
+      const lines = candidate.lines;
+
+      const name = lines.find(line =>
+        line !== "Open Website" &&
+        !/^\d[\d,]*$/.test(line)
+      );
+
+      const ownerIndex = lines.findIndex(line =>
+        line === "Open Website"
+      );
+
+      const numeric = lines.filter(line =>
+        /^\d[\d,]*$/.test(line)
+      );
+
+      if (!name || numeric.length < 3) return;
+
+      const owner = ownerIndex >= 0
+        ? lines.slice(ownerIndex + 1)
+            .find(line => !/^\d[\d,]*$/.test(line)) || "Unknown"
+        : "Unknown";
+
+      const key = name + "|" + numeric.join("|");
+
+      if (results.some(item => item.key === key)) return;
+
+      results.push({
+        key,
+        row: [
+          name,
+          owner,
+          numeric[numeric.length - 3],
+          numeric[numeric.length - 2],
+          numeric[numeric.length - 1]
+        ]
+      });
+    });
+
+    return results.map(item => item.row);
+  }
+
   function safePercent(current, previous) {
     if (previous === 0) {
-      return current > 0 ? "New activity (previous period was 0)" : "0%";
+      return current > 0
+        ? "New activity (previous period was 0)"
+        : "0%";
     }
 
     const percent = ((current - previous) / previous) * 100;
@@ -141,104 +268,64 @@
       percent.toFixed(1) + "%";
   }
 
+  function addChatMessage(sender, message) {
+    const box = document.getElementById("freeAIChatMessages");
+    if (!box) return;
+
+    const paragraph = document.createElement("p");
+    const strong = document.createElement("strong");
+
+    strong.textContent = sender + ": ";
+    paragraph.appendChild(strong);
+    paragraph.appendChild(document.createTextNode(message));
+
+    box.appendChild(paragraph);
+    box.scrollTop = box.scrollHeight;
+  }
+
   function analyzeTraffic() {
     const status = document.getElementById("freeAIStatus");
     const result = document.getElementById("freeAIResult");
 
-    status.textContent = "Analyzing all available traffic reports...";
+    if (!status || !result) return;
+
+    status.textContent = "Analyzing traffic reports...";
 
     try {
-      const users = getNumber("reportTotalUsers");
-      const websites = getNumber("reportTotalWebsites");
-      const approved = getNumber("reportApprovedWebsites");
-      const pending = getNumber("reportPendingWebsites");
-      const rejected = getNumber("reportRejectedWebsites");
-      const visits = getNumber("reportTotalVisits");
+      const data = {
+        users: getNumber("reportTotalUsers"),
+        websites: getNumber("reportTotalWebsites"),
+        approved: getNumber("reportApprovedWebsites"),
+        pending: getNumber("reportPendingWebsites"),
+        rejected: getNumber("reportRejectedWebsites"),
+        visits: getNumber("reportTotalVisits"),
 
-      const today = getNumber("todayVisitors");
-      const yesterday = getNumber("yesterdayVisitors");
-      const week = getNumber("last7DaysVisitors");
-      const month = getNumber("thisMonthVisitors");
-      const lastMonth = getNumber("lastMonthVisitors");
+        today: getNumber("todayVisitors"),
+        yesterday: getNumber("yesterdayVisitors"),
+        week: getNumber("last7DaysVisitors"),
+        month: getNumber("thisMonthVisitors"),
+        lastMonth: getNumber("lastMonthVisitors")
+      };
 
-      document.getElementById("freeAIUsers").textContent = users;
-      document.getElementById("freeAIWebsites").textContent = websites;
-      document.getElementById("freeAIVisits").textContent = visits;
-      document.getElementById("freeAIWeek").textContent = week;
+      document.getElementById("freeAIUsers").textContent = data.users;
+      document.getElementById("freeAIWebsites").textContent = data.websites;
+      document.getElementById("freeAIVisits").textContent = data.visits;
+      document.getElementById("freeAIWeek").textContent = data.week;
 
       const countryRows = getTableRows("countryReport");
-      const websiteRows = getTableRows("websiteTrafficReport");
+      const websiteRows = getWebsiteRows();
       const historyRows = getTableRows("visitHistory");
 
-      let report = "";
-
-      /* 1. PLATFORM OVERVIEW */
-
-      report += "TRAFFIC BOT PRO - ADVANCED SMART REPORT\n";
-      report += "========================================\n\n";
-
-      report += "1. PLATFORM OVERVIEW\n";
-      report += "Total Users: " + users + "\n";
-      report += "Total Websites: " + websites + "\n";
-      report += "Approved Websites: " + approved + "\n";
-      report += "Pending Websites: " + pending + "\n";
-      report += "Rejected Websites: " + rejected + "\n";
-      report += "Recorded Visits: " + visits + "\n\n";
-
-      /* 2. DAILY AND MONTHLY */
-
-      report += "2. DAILY AND MONTHLY TRAFFIC\n";
-      report += "Today: " + today + "\n";
-      report += "Yesterday: " + yesterday + "\n";
-      report += "Last 7 Days: " + week + "\n";
-      report += "This Month: " + month + "\n";
-      report += "Last Month: " + lastMonth + "\n\n";
-
-      /* 3. GROWTH */
-
-      const growth = safePercent(month, lastMonth);
-
-      document.getElementById("freeAIGrowth").textContent =
-        "Monthly Traffic Change: " + growth +
-        "\nToday vs Yesterday: " +
-        safePercent(today, yesterday);
-
-      report += "3. TRAFFIC GROWTH\n";
-      report += "Monthly Growth: " + growth + "\n";
-      report += "Daily Change: " +
-        safePercent(today, yesterday) + "\n\n";
-
-      /* 4. COUNTRY RANKING */
-
-      let countries = countryRows
+      const countries = countryRows
         .filter(row => !/country/i.test(row[0]))
         .map(row => ({
           name: row[0],
-          visits: Number(row[1].replace(/,/g, "")) || 0
+          visits: Number((row[1] || "0").replace(/,/g, "")) || 0
         }))
+        .filter(item => item.name)
         .sort((a, b) => b.visits - a.visits);
 
-      let countryText = "";
-
-      if (countries.length) {
-        countries.forEach((country, index) => {
-          countryText +=
-            (index + 1) + ". " + country.name +
-            " - " + country.visits + " visits\n";
-        });
-      } else {
-        countryText = "Country data is not available.";
-      }
-
-      document.getElementById("freeAICountries").textContent =
-        countryText;
-
-      report += "4. COUNTRY RANKING\n" +
-        countryText + "\n";
-
-      /* 5. WEBSITE RANKING */
-
-      let sites = websiteRows
+      const sites = websiteRows
         .filter(row => !/website/i.test(row[0]))
         .map(row => ({
           name: row[0],
@@ -247,30 +334,72 @@
           today: Number((row[3] || "0").replace(/,/g, "")) || 0,
           week: Number((row[4] || "0").replace(/,/g, "")) || 0
         }))
+        .filter(site => site.name)
         .sort((a, b) => b.visits - a.visits);
 
-      let websiteText = "";
+      latestData = {
+        ...data,
+        countries,
+        sites
+      };
 
-      if (sites.length) {
-        sites.forEach((site, index) => {
-          websiteText +=
+      let report = "";
+
+      report += "TRAFFIC BOT PRO - ADVANCED SMART REPORT\n";
+      report += "========================================\n\n";
+
+      report += "1. PLATFORM OVERVIEW\n";
+      report += "Total Users: " + data.users + "\n";
+      report += "Total Websites: " + data.websites + "\n";
+      report += "Approved Websites: " + data.approved + "\n";
+      report += "Pending Websites: " + data.pending + "\n";
+      report += "Rejected Websites: " + data.rejected + "\n";
+      report += "Recorded Visits: " + data.visits + "\n\n";
+
+      report += "2. DAILY AND MONTHLY TRAFFIC\n";
+      report += "Today: " + data.today + "\n";
+      report += "Yesterday: " + data.yesterday + "\n";
+      report += "Last 7 Days: " + data.week + "\n";
+      report += "This Month: " + data.month + "\n";
+      report += "Last Month: " + data.lastMonth + "\n\n";
+
+      const growth = safePercent(data.month, data.lastMonth);
+      const dailyGrowth = safePercent(data.today, data.yesterday);
+
+      document.getElementById("freeAIGrowth").textContent =
+        "Monthly Traffic Change: " + growth +
+        "\nToday vs Yesterday: " + dailyGrowth;
+
+      report += "3. TRAFFIC GROWTH\n";
+      report += "Monthly Growth: " + growth + "\n";
+      report += "Daily Change: " + dailyGrowth + "\n\n";
+
+      let countryText = countries.length
+        ? countries.map((country, index) =>
+            (index + 1) + ". " + country.name +
+            " - " + country.visits + " visits"
+          ).join("\n")
+        : "Country data is not available.";
+
+      document.getElementById("freeAICountries").textContent =
+        countryText;
+
+      report += "4. COUNTRY RANKING\n" + countryText + "\n\n";
+
+      let websiteText = sites.length
+        ? sites.map((site, index) =>
             (index + 1) + ". " + site.name +
             " | Owner: " + site.owner +
             " | Total: " + site.visits +
             " | Today: " + site.today +
-            " | 7 Days: " + site.week + "\n";
-        });
-      } else {
-        websiteText = "Website ranking data is not available.";
-      }
+            " | 7 Days: " + site.week
+          ).join("\n")
+        : "Website ranking data is not available.";
 
       document.getElementById("freeAIWebRanking").textContent =
         websiteText;
 
-      report += "5. WEBSITE RANKING\n" +
-        websiteText + "\n";
-
-      /* 6. TOP WEBSITE */
+      report += "5. WEBSITE RANKING\n" + websiteText + "\n\n";
 
       const top = sites.length ? sites[0] : null;
 
@@ -286,107 +415,68 @@
         ? top.name + " with " + top.visits + " visits.\n\n"
         : "No ranking data available.\n\n";
 
-      /* 7. SUSPICIOUS ACTIVITY */
-
       const visitorCounts = {};
 
-      historyRows
-        .filter(row => !/visitor/i.test(row[0]))
-        .forEach(row => {
-          const visitorId = row[2];
+      historyRows.forEach(row => {
+        const visitorId = row[2];
 
-          if (visitorId) {
-            visitorCounts[visitorId] =
-              (visitorCounts[visitorId] || 0) + 1;
-          }
-        });
+        if (visitorId) {
+          visitorCounts[visitorId] =
+            (visitorCounts[visitorId] || 0) + 1;
+        }
+      });
 
       const repeatedVisitors = Object.entries(visitorCounts)
         .filter(item => item[1] >= 3);
 
-      let alerts = "";
-
-      if (repeatedVisitors.length) {
-        alerts +=
-          "Repeated visitor IDs found in recent history:\n";
-
-        repeatedVisitors.forEach(item => {
-          alerts +=
+      let alerts = repeatedVisitors.length
+        ? repeatedVisitors.map(item =>
             "Visitor ID " + item[0] +
             " appears " + item[1] +
-            " times in the displayed history. Review manually.\n";
-        });
-      } else {
-        alerts =
-          "No repeated visitor ID appearing 3 or more times was found in the displayed history.";
-      }
+            " times. Review manually."
+          ).join("\n")
+        : "No repeated visitor ID appearing 3 or more times was found in the displayed history.";
 
       alerts +=
         "\nNote: Repeated visits do not prove bot activity or fraud.";
 
-      document.getElementById("freeAIAlerts").textContent =
-        alerts;
+      document.getElementById("freeAIAlerts").textContent = alerts;
 
       report += "7. ACTIVITY REVIEW\n" + alerts + "\n\n";
 
-      /* 8. WEBSITE MANAGEMENT */
-
       report += "8. WEBSITE MANAGEMENT\n";
 
-      if (pending > 0) {
-        report += pending +
-          " website(s) are waiting for approval.\n";
-      } else {
-        report += "No pending website approvals.\n";
+      report += data.pending > 0
+        ? data.pending + " website(s) are waiting for approval.\n"
+        : "No pending website approvals.\n";
+
+      report += "Rejected Websites: " + data.rejected + "\n\n";
+
+      const recommendations = [];
+
+      if (data.users < 10) {
+        recommendations.push("Invite more genuine members to join your platform.");
       }
 
-      report += "Rejected Websites: " + rejected + "\n\n";
-
-      /* 9. RECOMMENDATIONS */
-
-      let recommendations = [];
-
-      if (users < 10) {
-        recommendations.push(
-          "Invite more genuine members to join your platform."
-        );
+      if (data.websites === 0) {
+        recommendations.push("Encourage members to add their websites.");
       }
 
-      if (websites === 0) {
-        recommendations.push(
-          "Encourage members to add their websites."
-        );
+      if (data.week === 0) {
+        recommendations.push("Promote your platform to attract genuine visitors.");
       }
 
-      if (week === 0) {
-        recommendations.push(
-          "Promote your platform to attract genuine visitors."
-        );
-      }
-
-      if (pending > 0) {
-        recommendations.push(
-          "Review pending website approval requests."
-        );
+      if (data.pending > 0) {
+        recommendations.push("Review pending website approval requests.");
       }
 
       if (top) {
-        recommendations.push(
-          "Study the top performing website and learn what brings it visitors."
-        );
+        recommendations.push("Study the top performing website and learn what brings it visitors.");
       }
 
-      recommendations.push(
-        "Check country-wise and website-wise traffic regularly."
-      );
-
-      recommendations.push(
-        "Review unusual visitor patterns before taking action."
-      );
-
-      recommendations.push(
-        "Encourage genuine traffic and follow website policies."
-      );
+      recommendations.push("Check country-wise and website-wise traffic regularly.");
+      recommendations.push("Review unusual visitor patterns before taking action.");
+      recommendations.push("Encourage genuine traffic and follow website policies.");
 
       const recommendationText = recommendations
         .map((item, index) => (index + 1) + ". " + item)
@@ -398,8 +488,6 @@
       report += "9. SMART RECOMMENDATIONS\n";
       report += recommendationText + "\n\n";
 
-      /* 10. FINAL REPORT */
-
       report += "========================================\n";
       report += "Generated locally using JavaScript.\n";
       report += "No paid AI API or token used.\n";
@@ -410,8 +498,7 @@
         "Advanced traffic analysis completed successfully.";
 
     } catch (error) {
-      status.textContent =
-        "Analysis error: " + error.message;
+      status.textContent = "Analysis error: " + error.message;
 
       result.textContent =
         "Could not complete the analysis. Please refresh Admin Reports and try again.";
@@ -420,11 +507,174 @@
     }
   }
 
+  /* CHAT ASSISTANT */
+
+  function getChatAnswer(question) {
+    const q = question.toLowerCase().trim();
+
+    if (!latestData) {
+      return "Please click Analyze My Traffic first. Then I can answer questions using your latest traffic reports.";
+    }
+
+    const d = latestData;
+
+    if (
+      q.includes("country") ||
+      q.includes("india") ||
+      q.includes("which country")
+    ) {
+      if (!d.countries.length) {
+        return "Country report data is currently unavailable.";
+      }
+
+      return "Country traffic ranking:\n" +
+        d.countries.map((c, i) =>
+          (i + 1) + ". " + c.name + " - " + c.visits + " visits"
+        ).join("\n");
+    }
+
+    if (
+      q.includes("top website") ||
+      q.includes("highest traffic") ||
+      q.includes("best website") ||
+      q.includes("website ranking") ||
+      q.includes("website")
+    ) {
+      if (!d.sites.length) {
+        return "Website ranking data is not available. Please refresh the Website Traffic Report and Analyze My Traffic again.";
+      }
+
+      return "Website ranking:\n" +
+        d.sites.map((s, i) =>
+          (i + 1) + ". " + s.name +
+          " - " + s.visits + " visits"
+        ).join("\n") +
+        "\n\nTop website: " + d.sites[0].name +
+        " with " + d.sites[0].visits + " visits.";
+    }
+
+    if (q.includes("today")) {
+      return "Today's recorded visitors: " + d.today +
+        ". Yesterday's visitors: " + d.yesterday + ".";
+    }
+
+    if (q.includes("yesterday")) {
+      return "Yesterday's recorded visitors: " + d.yesterday + ".";
+    }
+
+    if (
+      q.includes("7 days") ||
+      q.includes("last week") ||
+      q.includes("weekly")
+    ) {
+      return "Recorded visits in the last 7 days: " + d.week + ".";
+    }
+
+    if (
+      q.includes("month") ||
+      q.includes("monthly")
+    ) {
+      return "This month: " + d.month +
+        " recorded visits.\nLast month: " + d.lastMonth +
+        ".\nMonthly change: " +
+        safePercent(d.month, d.lastMonth) + ".";
+    }
+
+    if (
+      q.includes("user") ||
+      q.includes("member")
+    ) {
+      return "Your platform currently has " + d.users +
+        " registered users.";
+    }
+
+    if (
+      q.includes("total visit") ||
+      q.includes("total traffic") ||
+      q.includes("how many visit")
+    ) {
+      return "Your platform has " + d.visits +
+        " total recorded visits.";
+    }
+
+    if (
+      q.includes("pending") ||
+      q.includes("approval")
+    ) {
+      return "Pending websites: " + d.pending +
+        ". Approved websites: " + d.approved +
+        ". Rejected websites: " + d.rejected + ".";
+    }
+
+    if (
+      q.includes("grow") ||
+      q.includes("increase") ||
+      q.includes("improve") ||
+      q.includes("recommend")
+    ) {
+      return "Traffic growth suggestions:\n" +
+        "1. Invite genuine members.\n" +
+        "2. Promote your platform on relevant social media.\n" +
+        "3. Encourage members to submit useful websites.\n" +
+        "4. Check country and website reports regularly.\n" +
+        "5. Follow website policies and avoid artificial traffic.";
+    }
+
+    if (
+      q.includes("hello") ||
+      q.includes("hi") ||
+      q.includes("namaste")
+    ) {
+      return "Hello! I am your Traffic Bot Pro Smart Assistant. Ask me about users, visits, countries, websites or traffic growth.";
+    }
+
+    if (
+      q.includes("help") ||
+      q.includes("what can")
+    ) {
+      return "You can ask me questions like:\n" +
+        "• How many total visits?\n" +
+        "• Which country has most visitors?\n" +
+        "• Which website has highest traffic?\n" +
+        "• How many visitors came today?\n" +
+        "• How many users are registered?\n" +
+        "• How can I increase traffic?";
+    }
+
+    return "I can answer questions about your available traffic reports. Try asking about total visits, users, countries, websites, today's traffic, monthly traffic or traffic growth.";
+  }
+
+  function sendChatMessage() {
+    const input = document.getElementById("freeAIChatInput");
+    if (!input) return;
+
+    const question = input.value.trim();
+
+    if (!question) {
+      addChatMessage("Assistant", "Please type a question first.");
+      return;
+    }
+
+    addChatMessage("You", question);
+
+    input.value = "";
+
+    const answer = getChatAnswer(question);
+
+    addChatMessage("Assistant", answer);
+  }
+
+  function clearChat() {
+    const box = document.getElementById("freeAIChatMessages");
+
+    if (box) {
+      box.innerHTML =
+        "<p><strong>Assistant:</strong> Chat cleared. Ask me a new question.</p>";
+    }
+  }
+
   if (document.readyState === "loading") {
-    document.addEventListener(
-      "DOMContentLoaded",
-      createAIManager
-    );
+    document.addEventListener("DOMContentLoaded", createAIManager);
   } else {
     createAIManager();
   }
