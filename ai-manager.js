@@ -86,6 +86,7 @@
 
       <div class="chart-card">
         <h3>💬 Traffic Assistant Chat</h3>
+
         <p class="small">
           Ask questions about your platform traffic and reports.
         </p>
@@ -114,6 +115,7 @@
 
       <div class="chart-card">
         <h3>📋 Complete Traffic Report</h3>
+
         <div id="freeAIResult"
           style="white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.8;">
           Click Analyze My Traffic to generate your report.
@@ -160,6 +162,7 @@
 
   function getTableRows(id) {
     const element = document.getElementById(id);
+
     if (!element) return [];
 
     return Array.from(element.querySelectorAll("tr"))
@@ -170,89 +173,22 @@
       .filter(row => row.length >= 2);
   }
 
-  /* Read website data from table or card-style HTML */
+  /* READ WEBSITE DATA FROM INDEX.HTML */
 
   function getWebsiteRows() {
-    const tableRows = getTableRows("websiteTrafficReport");
+    const rows = window.trafficBotWebsiteRows;
 
-    if (tableRows.length > 1) {
-      return tableRows;
+    if (!Array.isArray(rows)) {
+      return [];
     }
 
-    const container = document.getElementById("websiteTrafficReport");
-    if (!container) return [];
-
-    const anchors = Array.from(container.querySelectorAll("a"));
-    const results = [];
-
-    anchors.forEach(anchor => {
-      let node = anchor.parentElement;
-      let candidate = null;
-
-      while (node && node !== container.parentElement) {
-        const text = node.innerText || "";
-        const lines = text.split(/\n+/)
-          .map(line => line.trim())
-          .filter(Boolean);
-
-        const numericLines = lines.filter(line =>
-          /^\d[\d,]*$/.test(line)
-        );
-
-        if (
-          lines.length >= 4 &&
-          numericLines.length >= 3 &&
-          node.closest("#websiteTrafficReport")
-        ) {
-          candidate = { node, lines };
-          break;
-        }
-
-        if (node === container) break;
-        node = node.parentElement;
-      }
-
-      if (!candidate) return;
-
-      const lines = candidate.lines;
-
-      const name = lines.find(line =>
-        line !== "Open Website" &&
-        !/^\d[\d,]*$/.test(line)
-      );
-
-      const ownerIndex = lines.findIndex(line =>
-        line === "Open Website"
-      );
-
-      const numeric = lines.filter(line =>
-        /^\d[\d,]*$/.test(line)
-      );
-
-      if (!name || numeric.length < 3) return;
-
-      const owner = ownerIndex >= 0
-        ? lines.slice(ownerIndex + 1)
-            .find(line => !/^\d[\d,]*$/.test(line)) || "Unknown"
-        : "Unknown";
-
-      const key = name + "|" + numeric.join("|");
-
-      if (results.some(item => item.key === key)) return;
-
-      results.push({
-        key,
-        row: [
-          name,
-          owner,
-          numeric[numeric.length - 3],
-          numeric[numeric.length - 2],
-          numeric[numeric.length - 1]
-        ]
-      });
-    });
-
-    return results.map(item => item.row);
+    return rows.map(row => [
+      row.name || "Unknown Website",
+      row.owner || "Unknown",
+      String(Number(row.total || 0)),
+      String(Number(row.today || 0)),
+      String(Number(row.last7 || 0))
+    ]);
   }
 
   function safePercent(current, previous) {
@@ -270,18 +206,22 @@
 
   function addChatMessage(sender, message) {
     const box = document.getElementById("freeAIChatMessages");
+
     if (!box) return;
 
     const paragraph = document.createElement("p");
     const strong = document.createElement("strong");
 
     strong.textContent = sender + ": ";
+
     paragraph.appendChild(strong);
     paragraph.appendChild(document.createTextNode(message));
 
     box.appendChild(paragraph);
     box.scrollTop = box.scrollHeight;
   }
+
+  /* MAIN TRAFFIC ANALYSIS */
 
   function analyzeTraffic() {
     const status = document.getElementById("freeAIStatus");
@@ -316,6 +256,8 @@
       const websiteRows = getWebsiteRows();
       const historyRows = getTableRows("visitHistory");
 
+      /* COUNTRY ANALYSIS */
+
       const countries = countryRows
         .filter(row => !/country/i.test(row[0]))
         .map(row => ({
@@ -324,6 +266,8 @@
         }))
         .filter(item => item.name)
         .sort((a, b) => b.visits - a.visits);
+
+      /* WEBSITE ANALYSIS */
 
       const sites = websiteRows
         .filter(row => !/website/i.test(row[0]))
@@ -363,6 +307,8 @@
       report += "This Month: " + data.month + "\n";
       report += "Last Month: " + data.lastMonth + "\n\n";
 
+      /* TRAFFIC GROWTH */
+
       const growth = safePercent(data.month, data.lastMonth);
       const dailyGrowth = safePercent(data.today, data.yesterday);
 
@@ -374,7 +320,9 @@
       report += "Monthly Growth: " + growth + "\n";
       report += "Daily Change: " + dailyGrowth + "\n\n";
 
-      let countryText = countries.length
+      /* COUNTRY RANKING */
+
+      const countryText = countries.length
         ? countries.map((country, index) =>
             (index + 1) + ". " + country.name +
             " - " + country.visits + " visits"
@@ -386,7 +334,9 @@
 
       report += "4. COUNTRY RANKING\n" + countryText + "\n\n";
 
-      let websiteText = sites.length
+      /* WEBSITE RANKING */
+
+      const websiteText = sites.length
         ? sites.map((site, index) =>
             (index + 1) + ". " + site.name +
             " | Owner: " + site.owner +
@@ -401,6 +351,8 @@
 
       report += "5. WEBSITE RANKING\n" + websiteText + "\n\n";
 
+      /* TOP WEBSITE */
+
       const top = sites.length ? sites[0] : null;
 
       document.getElementById("freeAITopWebsite").textContent =
@@ -414,6 +366,8 @@
       report += top
         ? top.name + " with " + top.visits + " visits.\n\n"
         : "No ranking data available.\n\n";
+
+      /* ACTIVITY REVIEW */
 
       const visitorCounts = {};
 
@@ -444,6 +398,8 @@
 
       report += "7. ACTIVITY REVIEW\n" + alerts + "\n\n";
 
+      /* WEBSITE MANAGEMENT */
+
       report += "8. WEBSITE MANAGEMENT\n";
 
       report += data.pending > 0
@@ -452,31 +408,51 @@
 
       report += "Rejected Websites: " + data.rejected + "\n\n";
 
+      /* SMART RECOMMENDATIONS */
+
       const recommendations = [];
 
       if (data.users < 10) {
-        recommendations.push("Invite more genuine members to join your platform.");
+        recommendations.push(
+          "Invite more genuine members to join your platform."
+        );
       }
 
       if (data.websites === 0) {
-        recommendations.push("Encourage members to add their websites.");
+        recommendations.push(
+          "Encourage members to add their websites."
+        );
       }
 
       if (data.week === 0) {
-        recommendations.push("Promote your platform to attract genuine visitors.");
+        recommendations.push(
+          "Promote your platform to attract genuine visitors."
+        );
       }
 
       if (data.pending > 0) {
-        recommendations.push("Review pending website approval requests.");
+        recommendations.push(
+          "Review pending website approval requests."
+        );
       }
 
       if (top) {
-        recommendations.push("Study the top performing website and learn what brings it visitors.");
+        recommendations.push(
+          "Study the top performing website and learn what brings it visitors."
+        );
       }
 
-      recommendations.push("Check country-wise and website-wise traffic regularly.");
-      recommendations.push("Review unusual visitor patterns before taking action.");
-      recommendations.push("Encourage genuine traffic and follow website policies.");
+      recommendations.push(
+        "Check country-wise and website-wise traffic regularly."
+      );
+
+      recommendations.push(
+        "Review unusual visitor patterns before taking action."
+      );
+
+      recommendations.push(
+        "Encourage genuine traffic and follow website policies."
+      );
 
       const recommendationText = recommendations
         .map((item, index) => (index + 1) + ". " + item)
@@ -646,6 +622,7 @@
 
   function sendChatMessage() {
     const input = document.getElementById("freeAIChatInput");
+
     if (!input) return;
 
     const question = input.value.trim();
@@ -672,6 +649,8 @@
         "<p><strong>Assistant:</strong> Chat cleared. Ask me a new question.</p>";
     }
   }
+
+  /* INITIALIZE SMART MANAGER */
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", createAIManager);
