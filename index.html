@@ -1146,6 +1146,14 @@ async function loadHistoricalDailyTraffic(days){
   message.textContent = "No traffic data available.";
   return;
  }
+ /* SHARE WEBSITE DATA WITH FREE SMART MANAGER */
+window.trafficBotWebsiteRows = data.map(row => ({
+    name: row.website_name || "Unknown Website",
+    owner: row.owner_name || "Unknown",
+    total: Number(row.total_visits || 0),
+    today: Number(row.today_visits || 0),
+    last7: Number(row.last_7_days_visits || 0)
+}));
 
  const items = data.map(row => {
 
