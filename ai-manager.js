@@ -1,9 +1,17 @@
-/* TRAFFIC BOT PRO - ADVANCED FREE SMART MANAGER + CHAT */
+/* TRAFFIC BOT PRO - ADVANCED FREE SMART MANAGER + AUTO MONITOR + CHAT */
 
 (function () {
   "use strict";
 
   let latestData = null;
+  let autoRefreshTimer = null;
+  let autoMonitorTimer = null;
+  let autoRefreshing = false;
+  let wasAdminVisible = false;
+
+  const AUTO_REFRESH_INTERVAL = 5 * 60 * 1000;
+
+  /* CREATE SMART MANAGER */
 
   function createAIManager() {
     const admin = document.getElementById("adminSection");
@@ -26,14 +34,17 @@
           <span>Total Users</span>
           <strong id="freeAIUsers">0</strong>
         </div>
+
         <div class="report-stat">
           <span>Total Websites</span>
           <strong id="freeAIWebsites">0</strong>
         </div>
+
         <div class="report-stat">
           <span>Total Visits</span>
           <strong id="freeAIVisits">0</strong>
         </div>
+
         <div class="report-stat">
           <span>Last 7 Days</span>
           <strong id="freeAIWeek">0</strong>
@@ -146,6 +157,8 @@
       });
   }
 
+  /* GET ELEMENT TEXT */
+
   function getElementText(id) {
     const element = document.getElementById(id);
     return element ? element.innerText.trim() : "";
@@ -173,14 +186,12 @@
       .filter(row => row.length >= 2);
   }
 
-  /* READ WEBSITE DATA FROM INDEX.HTML */
+  /* READ WEBSITE DATA */
 
   function getWebsiteRows() {
     const rows = window.trafficBotWebsiteRows;
 
-    if (!Array.isArray(rows)) {
-      return [];
-    }
+    if (!Array.isArray(rows)) return [];
 
     return rows.map(row => [
       row.name || "Unknown Website",
@@ -190,6 +201,8 @@
       String(Number(row.last7 || 0))
     ]);
   }
+
+  /* PERCENTAGE CALCULATION */
 
   function safePercent(current, previous) {
     if (previous === 0) {
@@ -203,6 +216,8 @@
     return (percent > 0 ? "+" : "") +
       percent.toFixed(1) + "%";
   }
+
+  /* CHAT MESSAGE */
 
   function addChatMessage(sender, message) {
     const box = document.getElementById("freeAIChatMessages");
@@ -386,8 +401,7 @@
       let alerts = repeatedVisitors.length
         ? repeatedVisitors.map(item =>
             "Visitor ID " + item[0] +
-            " appears " + item[1] +
-            " times. Review manually."
+            " appears " + item[1] + " times. Review manually."
           ).join("\n")
         : "No repeated visitor ID appearing 3 or more times was found in the displayed history.";
 
@@ -650,12 +664,137 @@
     }
   }
 
-  /* INITIALIZE SMART MANAGER */
+  /* CHECK ADMIN PANEL VISIBILITY */
+
+  function isAdminVisible() {
+    const admin = document.getElementById("adminSection");
+
+    if (!admin) return false;
+
+    return admin.getClientRects().length > 0 &&
+      window.getComputedStyle(admin).display !== "none" &&
+      window.getComputedStyle(admin).visibility !== "hidden";
+  }
+
+  /* AUTOMATIC REPORT REFRESH */
+
+  async function automaticTrafficAnalysis() {
+    if (autoRefreshing) return;
+    if (!isAdminVisible()) return;
+    if (document.visibilityState === "hidden") return;
+
+    autoRefreshing = true;
+
+    const status = document.getElementById("freeAIStatus");
+
+    if (status) {
+      status.textContent = "🤖 Automatic Smart Manager is updating reports...";
+    }
+
+    try {
+      const reportFunctions = [
+        ["loadAdminReport", []],
+        ["loadTrafficPeriodReport", []],
+        ["loadHistoricalDailyTraffic", [7]],
+        ["loadCountryReport", []],
+        ["loadWebsiteTrafficReport", []],
+        ["loadVisitHistory", []]
+      ];
+
+      for (const item of reportFunctions) {
+        const functionName = item[0];
+        const args = item[1];
+        const reportFunction = window[functionName];
+
+        if (typeof reportFunction === "function") {
+          try {
+            await Promise.resolve(reportFunction.apply(window, args));
+          } catch (error) {
+            console.error(
+              "Smart Manager report error:",
+              functionName,
+              error
+            );
+          }
+        }
+      }
+
+      analyzeTraffic();
+
+      if (status) {
+        status.textContent =
+          "🟢 AUTOMATIC BOT ACTIVE - Reports updated successfully. Next update in 5 minutes.";
+      }
+
+    } catch (error) {
+      console.error("Automatic Traffic Analysis:", error);
+
+      if (status) {
+        status.textContent =
+          "Automatic update error: " + error.message;
+      }
+
+    } finally {
+      autoRefreshing = false;
+    }
+  }
+
+  /* START AUTOMATIC SMART MANAGER */
+
+  function startAutomaticBot() {
+    createAIManager();
+
+    if (autoMonitorTimer) {
+      clearInterval(autoMonitorTimer);
+    }
+
+    autoMonitorTimer = setInterval(function () {
+      const visible = isAdminVisible();
+
+      if (visible && !wasAdminVisible) {
+        wasAdminVisible = true;
+
+        automaticTrafficAnalysis();
+
+        if (autoRefreshTimer) {
+          clearInterval(autoRefreshTimer);
+        }
+
+        autoRefreshTimer = setInterval(
+          automaticTrafficAnalysis,
+          AUTO_REFRESH_INTERVAL
+        );
+      }
+
+      if (!visible && wasAdminVisible) {
+        wasAdminVisible = false;
+
+        if (autoRefreshTimer) {
+          clearInterval(autoRefreshTimer);
+          autoRefreshTimer = null;
+        }
+      }
+
+    }, 2000);
+  }
+
+  /* REFRESH WHEN USER RETURNS TO TAB */
+
+  document.addEventListener("visibilitychange", function () {
+    if (
+      document.visibilityState === "visible" &&
+      isAdminVisible()
+    ) {
+      automaticTrafficAnalysis();
+    }
+  });
+
+  /* INITIALIZE */
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", createAIManager);
+    document.addEventListener("DOMContentLoaded", startAutomaticBot);
   } else {
-    createAIManager();
+    startAutomaticBot();
   }
 
 })();
