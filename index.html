@@ -769,119 +769,153 @@ async function loadMyWebsites(){
  `).join("");
 }
 
-/* APPROVED WEBSITES */
+/* APPROVED WEBSITES - AUTOMATIC ROTATION */
 
 async function loadApproved(){
 
- const box=el("approvedWebsites");
+const box=el("approvedWebsites");
 
- if(!currentUser){
-  box.textContent="Please login.";
-  return;
- }
+if(!currentUser){
+box.textContent="Please login.";
+return;
+}
 
- const {data,error}=await db
-  .from("websites")
-  .select("id,name,url,visits,user_id,created_at")
-  .eq("status","approved")
-  .neq("user_id",currentUser.id)
-  .order("created_at",{ascending:false});
+box.textContent="Finding next website...";
 
- if(error){
-  box.textContent="Error loading websites: "+error.message;
-  return;
- }
+const {data,error}=await db
+.from("websites")
+.select("id,name,url,visits,user_id,created_at")
+.eq("status","approved")
+.neq("user_id",currentUser.id)
+.order("created_at",{ascending:false});
 
- if(!data||data.length===0){
-  box.textContent="No other approved websites available yet.";
-  return;
- }
+if(error){
+box.textContent="Error loading websites: "+error.message;
+return;
+}
 
- box.innerHTML=data.map(site=>`
+if(!data||data.length===0){
+box.textContent="No other approved websites available yet.";
+return;
+}
+
+const rotationKey="tbp_last_visited_"+currentUser.id;
+const lastVisited=localStorage.getItem(rotationKey);
+
+let ordered=[...data];
+
+if(lastVisited){
+const lastIndex=ordered.findIndex(
+site=>site.id===lastVisited
+);
+
+if(lastIndex!==-1){
+ordered=[
+...ordered.slice(lastIndex+1),
+...ordered.slice(0,lastIndex+1)
+];
+}
+}
+
+box.innerHTML=ordered.map((site,index)=>`
+
   <div class="item">
    <h3>${escapeHTML(site.name)}</h3>
    <p>Recorded Visits: ${Number(site.visits||0)}</p>
-   <button class="primary" onclick="visitWebsite('${site.id}')">Visit Website</button>
+   <p>${index===0?"⭐ Next Website":"Approved Website"}</p>
+   <button class="primary"
+    onclick="visitWebsite('${site.id}')">
+    Visit Website
+   </button>
   </div>
  `).join("");
-}
-
-/* COUNTRY DETECTION */
+}/* VISIT WEBSITE - ROTATION TRACKING */
+/* DETECT VISITOR COUNTRY */
 
 async function detectCountry(){
 
  try{
+
   const response=await fetch("https://ipapi.co/json/");
 
-  if(!response.ok)return "Unknown";
+  if(!response.ok){
+   return "Unknown";
+  }
 
-  const info=await response.json();
-  return info.country_name||"Unknown";
+  const data=await response.json();
+
+  return data.country_name || "Unknown";
 
  }catch(error){
-  console.log("Country detection unavailable:",error);
+
+  console.error("Country detection error:",error);
+
   return "Unknown";
  }
 }
-
-/* VISIT WEBSITE */
-
+ 
 async function visitWebsite(websiteId){
 
- if(!currentUser){
-  showSection("accountSection");
-  return;
- }
-
- const visitTab=window.open("about:blank","_blank");
-
- const country=await detectCountry();
-
- const {data,error}=await db.rpc(
-  "record_website_visit",
-  {
-   p_website_id:websiteId,
-   p_country:country
-  }
- );
-
- if(error){
-  if(visitTab)visitTab.close();
-  alert("Visit error: "+error.message);
-  return;
- }
-
- if(!data||data.success!==true){
-  if(visitTab)visitTab.close();
-  alert(data?.message||"Visit could not be recorded.");
-  return;
- }
-
- const {data:site,error:siteError}=await db
-  .from("websites")
-  .select("url")
-  .eq("id",websiteId)
-  .eq("status","approved")
-  .maybeSingle();
-
- if(siteError||!site){
-  if(visitTab)visitTab.close();
-  alert("Website could not be opened.");
-  await loadApproved();
-  return;
- }
-
- if(visitTab){
-  visitTab.location.href=site.url;
- }else{
-  window.location.href=site.url;
- }
-
- await Promise.all([
-  loadApproved(),
-  loadMyWebsites()
- ]);
+if(!currentUser){
+showSection("accountSection");
+return;
 }
+
+const visitTab=window.open("about:blank","_blank");
+
+const country=await detectCountry();
+
+const {data,error}=await db.rpc(
+"record_website_visit",
+{
+p_website_id:websiteId,
+p_country:country
+}
+);
+
+if(error){
+if(visitTab)visitTab.close();
+alert("Visit error: "+error.message);
+return;
+}
+
+if(!data||data.success!==true){
+if(visitTab)visitTab.close();
+alert(data?.message||"Visit could not be recorded.");
+return;
+}
+
+const {data:site,error:siteError}=await db
+.from("websites")
+.select("url")
+.eq("id",websiteId)
+.eq("status","approved")
+.maybeSingle();
+
+if(siteError||!site){
+if(visitTab)visitTab.close();
+alert("Website could not be opened.");
+await loadApproved();
+return;
+}
+
+localStorage.setItem(
+"tbp_last_visited_"+currentUser.id,
+websiteId
+);
+
+if(visitTab){
+visitTab.location.href=site.url;
+}else{
+window.location.href=site.url;
+}
+
+await Promise.all([
+loadApproved(),
+loadMyWebsites()
+]);
+}
+ 
 
 /* ADMIN PANEL */
 
